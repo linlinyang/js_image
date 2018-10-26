@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>js图片压缩，方向纠正，预览，上传</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=0">
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+	<style type="text/css">
+		body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,button,textarea,p,blockquote,th,td { margin:0; padding:0; }
+	    body { background:#fff; color:#555; font-size:14px; font-family: Verdana, Arial, Helvetica, sans-serif; }
+	    td,th,caption { font-size:14px; }
+	    h1, h2, h3, h4, h5, h6 { font-weight:normal; font-size:100%; }
+	    address, caption, cite, code, dfn, em, strong, th, var { font-style:normal; font-weight:normal;}
+	    a { color:#555; text-decoration:none; }
+	    a:hover { text-decoration:underline; }
+	    img { border:none; }
+	    ol,ul,li { list-style:none; }
+	    input, textarea, select, button { font:14px Verdana,Helvetica,Arial,sans-serif; }
+	    table { border-collapse:collapse; }
+	    html {overflow-y: scroll;}
+
+	    .clearfix:after {content: "."; display: block; height:0; clear:both; visibility: hidden;}
+	    .clearfix { *zoom:1; }
+
+	    .main{
+
+			width: 80%;
+			max-width: 1200px;
+			margin: 100px auto 0;
+			border: 1px solid #ccc;
+			padding: 20px;
+
+	    }
+
+	    .preview-box{
+	    	border: 1px solid #ccc;
+	    	margin:  10px 0;
+	    	width: 500px;
+	    	height: 500px;
+	    	box-sizing: border-box;
+	    	padding:  20px;
+	    	display: flex;
+	    	justify-content: center;
+	    	align-items: center;
+	    	overflow-x: hidden;
+	    	text-align: center;
+	    	flex-flow: row wrap;
+	    }
+	    .preview-box img{
+	    	max-width: 100%;
+	    }
+	</style>
+
+</head>
+<body>
+	
+	<div class="main">
+		<div class="upload">
+			<input type="file" accept='image/*' capture="camera" multiple="true">
+		</div>
+		<div class="preview-box"></div>
+	</div>
+
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+	<script type="text/javascript">
+		
+		window.addEventListener('DOMContentLoaded',ready,false);
+		window.addEventListener('unload',logout,false);
+
+		function logout(){
+			window.removeEventListener('DOMContentLoaded',ready,false);
+		}
+		function ready(){
+
+			document.querySelector('.main .upload input').addEventListener('change',selectImg,false);
+
+		}
+
+		function selectImg(e){
+			var target = e.target;
+
+			imgPreview(target.files);
+		}
+
+		var TYPES = ['image/jpeg','image/png','image/jpg','images/gif'];
+		function imgPreview(filelist){
+			var files = Array.prototype.slice.call(filelist);
+
+			files.forEach(function(file,index){
+				if(TYPES.indexOf(file.type) < 0){
+					alert(file.name + '文件格式不对，请上传图片格式');
+					return false;
+				}
+				var reader = new FileReader();
+				reader.onload = function(e){
+					var img = new Image();
+					img.onload = function(){
+						document.querySelector('.preview-box').appendChild(this);
+						getOrientation(this,file.type);
+						console.log(file.type);
+					}
+					img.src = e.target.result;
+					img = null;
+				};
+				reader.readAsDataURL(file);
+			});
+		}
+
+		function getOrientation(image,type){
+			EXIF.getData(image,function(){
+				var orientation = EXIF.getTag(this,'Orientation');
+				if(orientation == '' || orientation == undefined || orientation == null){
+					orientation = 1;
+				}
+				//get base image
+				var result = getImgCompress(scaleImg(image,1000),orientation,type,1);
+				
+			});
+		}
+
+		function getImgCompress(image,orientation,type,quality){
+			var width = image.width,
+				height = image.height,
+				canvas = document.createElement('canvas'),
+				ctx = canvas.getContext('2d');
+
+			canvas.width = width;
+			canvas.height = height;
+
+			switch(orientation){
+				case 6:
+					console.log('rotate 90 deg');
+					ctx.rotate(Math.PI/2);
+					ctx.drawImage(image,0,-height,width,height);
+					break ;
+				case 3:
+					console.log('rotate 180deg');
+					ctx.rotate(Math.PI);
+					ctx.drawImage(image,-width,-height,width,height);
+					break ;
+				case 8:
+					console.log('rotate 270deg');
+					ctx.rotate(-Math.PI/2);
+					ctx.drawImage(image,-width,height,width,height);
+					break ;
+				default:
+					console.log('no rotate');
+					ctx.drawImage(image,0,0,width,height);
+
+			}
+			return canvas.toDataURL(type,quality);
+
+		}
+
+		function scaleImg(image,wh){
+			if(!image){
+				return image;
+			}
+			var width = image.width,
+				height = image.height,
+				maxSize = Math.max(width,height);
+
+			if(maxSize > wh){
+				width = width * (wh / maxSize);
+				height = height * (wh / maxSize);
+				image.width = width;
+				image.height = height;
+
+			}
+
+			return image;
+		}
+
+	</script>
+
+</body>
+</html>

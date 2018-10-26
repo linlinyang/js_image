@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>图片裁剪</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=0">
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+	<style type="text/css">
+		
+		body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,button,textarea,p,blockquote,th,td { margin:0; padding:0; }
+	    body { background:#fff; color:#555; font-size:14px; font-family: Verdana, Arial, Helvetica, sans-serif; }
+	    td,th,caption { font-size:14px; }
+	    h1, h2, h3, h4, h5, h6 { font-weight:normal; font-size:100%; }
+	    address, caption, cite, code, dfn, em, strong, th, var { font-style:normal; font-weight:normal;}
+	    a { color:#555; text-decoration:none; }
+	    a:hover { text-decoration:underline; }
+	    img { border:none; }
+	    ol,ul,li { list-style:none; }
+	    input, textarea, select, button { font:14px Verdana,Helvetica,Arial,sans-serif; }
+	    table { border-collapse:collapse; }
+	    html {overflow-y: scroll;}
+
+	    .clearfix:after {content: "."; display: block; height:0; clear:both; visibility: hidden;}
+	    .clearfix { *zoom:1; }
+
+		.model{
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 95%;
+			background: rgba(0,0,0,0.5);
+			z-index: 9999;
+			text-align: center;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		.model canvas{
+			
+		}
+	</style>
+</head>
+<body>
+	
+	<div class="model" id="crop">
+	</div>
+
+	<script type="text/javascript">
+		window.addEventListener('DOMContentLoaded',ready,false);
+
+		function ready(){
+
+			var image = new Image();
+			image.onload = function(){
+				cropper(this,{
+					viewEl: '#crop'
+				});
+			};
+			image.src = 'images/test.jpg';
+
+		}
+
+		function cropper(img,options){
+			return new Crop(img,options);
+		}
+
+		function Crop(img,options){
+			if(!img){
+				return this;
+			}
+
+			this.mergeOptions(img,options);
+
+			this._init();
+		}
+
+		Crop.prototype.mergeOptions = function(img,options){
+			options.viewEl = typeof options.viewEl === 'string' 
+							? document.querySelector(options.viewEl) 
+							: options.viewEl;
+			var opts = this.opts = extend({
+				img: img
+			},options);
+
+		};
+
+		Crop.prototype._init = function(){
+			this._initImage();
+			this._initCanvas();
+			this._initCropBox();
+			this.showCrop();
+
+		};
+
+		Crop.prototype._initImage = function(){
+			var opts = this.opts,
+				img = opts.img,
+				width = img.width,
+				height = img.height,
+				viewEl = opts.viewEl,
+				mWidth = viewEl.clientWidth,
+				mHeight = viewEl.clientHeight,
+				minRatio = Math.min(mWidth / width ,mHeight / height);
+
+			if(minRatio < 1){
+				opts.width = width = img.width = width * minRatio;
+				opts.height = height = img.height = height * minRatio;
+			}
+
+		};
+
+		Crop.prototype._initCanvas = function(){
+			var opts = this.opts,
+				width = opts.width,
+				height = opts.height,
+				img = opts.img,
+				canvas = opts.canvas = document.createElement('canvas'),
+				ctx = canvas.getContext('2d');
+
+			canvas.width = width;
+			canvas.height = height;
+
+			canvas.innerText = '浏览器不支持画布';
+			ctx.save();
+			ctx.drawImage(img,0,0,width,height);
+			ctx.restore();
+
+		};
+		Crop.prototype._initCropBox = function(){
+			var opts = this.opts;
+			new CropBox(opts.canvas);
+		}
+		Crop.prototype.showCrop = function(){
+			var opts = this.opts,
+				viewEl = opts.viewEl;
+
+			viewEl.innerHTML = '';
+			viewEl.appendChild(opts.canvas);
+		}
+		Crop.prototype.destory = function(){
+		};
+
+		function CropBox(canvas,options){
+			if(!canvas){
+				return this;
+			}
+			this.canvas = canvas;
+			var width = canvas.width,
+				height = canvas.height,
+				size = Math.min(width,height) / 2;
+			var opts = this.opts = extend({
+				x: 0,
+				y: 0,
+				width: size,
+				height: size,
+				radius: 0,
+				stokeStyle: 'red',
+				stokeHeight: '20%',
+				lineWidth: 3
+			},options);
+
+			opts.hSize = coverStrToNum(opts.stokeHeight,opts.width);
+			opts.vSize = coverStrToNum(opts.stokeHeight,opts.height);
+
+			this._initEvent();
+			this.draw((width - size) / 2,(height - size) /2);
+		}
+
+		CropBox.prototype.draw = function(x,y){
+			var thisOpt = extend(this.opts,{
+				x: x >= 0 ? x : 0,
+				y: y >= 0 ? y : 0
+			}),
+			ctx = this.canvas.getContext('2d'),
+			width = thisOpt.width,
+			height = thisOpt.height,
+			vSize = thisOpt.vSize,
+			hSize = thisOpt.hSize
+			x = this.x = thisOpt.x,
+			y = this.y = thisOpt.y;
+
+			//ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+			//ctx.save();
+			ctx.strokeStyle = thisOpt.stokeStyle;
+			ctx.lineWidth = thisOpt.lineWidth;
+			ctx.beginPath();
+			ctx.moveTo(x,y);
+			ctx.lineTo(x + hSize,y);
+			ctx.moveTo(x + width - hSize,y);
+			ctx.lineTo(x + width,y);
+			ctx.moveTo(x + width,y);
+			ctx.lineTo(x + width,y + vSize);
+			ctx.moveTo(x + width,y + height - vSize);
+			ctx.lineTo(x + width,y + height);
+			ctx.moveTo(x + width,y + height);
+			ctx.lineTo(x + width - hSize,y + height);
+			ctx.moveTo(x + hSize,y + height);
+			ctx.lineTo(x,y + height);
+			ctx.moveTo(x,y + height);
+			ctx.lineTo(x,y + height - vSize);
+			ctx.moveTo(x,y + vSize);
+			ctx.lineTo(x,y);
+			ctx.stroke();
+
+		}
+
+		CropBox.prototype._initEvent = function(){
+			this.canvas.addEventListener('mousedown',this.startDrag.bind(this),false);
+			this.canvas.addEventListener('mousemove',this.handChange.bind(this),false);
+			this.canvas.addEventListener('mouseup',this.endDrag.bind(this),false);
+		};
+
+		CropBox.prototype.startDrag = function(e){
+			this.isDragging = true;
+			this.oldX = e.offsetX;
+			this.oldY = e.offsetY;
+		}
+		CropBox.prototype.handChange = function(e){
+			var canvas = this.canvas,
+				canvasRect = canvas.getBoundingClientRect(),
+				x = e.offsetX,
+				y = e.offsetY,
+				startX = this.x,
+				startY = this.y,
+				width = this.opts.width,
+				height = this.opts.height;
+
+			if(x < startX || x > (startX + width) || y < startY | y > (startY + height)){
+				canvas.style.cursor = 'default';
+			}else{
+				canvas.style.cursor = 'move';
+			}
+
+			if(this.isDragging){
+				this.draw(startX + x - this.oldX,startY + y -this.oldY);
+			}
+			
+		};
+		CropBox.prototype.endDrag = function(e){
+			this.isDragging = false;
+		};
+
+		function extend(to,from){
+			if(!from || !isObject(from)){
+				return to;
+			}
+			if(!to || !isObject(to)){
+				return to;
+			}
+
+			for(var key in from){
+				if(from.hasOwnProperty(key)){
+					to[key] = from[key];
+				}
+			}
+			return to;
+		}
+
+		function isObject(obj){
+			return Object.prototype.toString.call(obj) === '[object Object]';
+		}
+
+		function coverStrToNum(str,total){
+			var num = Number(str);
+			if(isNaN(num)){
+				num = String(str).match(/([\d\.]+)\%/);
+				num = Number(num[1]);
+				if(isNaN(num)){
+					throw new Error('Error number type');
+				}
+				return num / 100 * total;
+			}else{
+				return num;
+			}
+		}
+
+	</script>
+
+</body>
+</html>
