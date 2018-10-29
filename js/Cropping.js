@@ -13,6 +13,8 @@ function cropping(srcOrImg,options){
 * @params{options},object, image params
 */
 function Croper(srcOrImg,options){
+	this._installGlobalProperty();
+
 	this._mergeOptions(options);
 
 	this._callhook(this.beforeCrop);
@@ -20,6 +22,56 @@ function Croper(srcOrImg,options){
 	this._loadImg(srcOrImg,this._init.bind(this));
 
 }
+
+var defaultHander = {
+	beginDrag: function(e){
+		this.isDragging = true;
+		this._callhook(this.beginDrag);
+		var cropBox = this.cropBox,
+			x = cropBox.x,
+			y = cropBox.y;
+		this._distanceX = e.offsetX - x;
+		this._distanceY = e.offsetY - y;
+	},
+	dragging: function(e){
+		var canvas = this.canvas,
+			cropBox = this.cropBox,
+			x = e.offsetX,
+			y = e.offsetY,
+			startX = cropBox.x,
+			startY = cropBox.y,
+			cropWidth = cropBox.width,
+			cropHeight = cropBox.height;
+
+		if(x < startX || x > (startX + cropWidth) || y < startY || y > (startY + cropHeight)){
+			canvas.style.cursor = 'default';
+			return ;
+		}
+		if(this.isDragging){
+			this.drawImage();
+			this.cropBox.draw(x - this._distanceX,y - this._distanceY);
+			this._callhook(this.dragging,this.canvas,this.cropBox);
+		}
+		canvas.style.cursor = 'move';
+		
+	},
+	endDrag: function(){
+		this.canvas.style.cursor = 'move';
+		this.isDragging = false;
+		this._callhook(this.endDrag);
+		try{
+			delete this._distanceX;
+			delete this._distanceY;
+		}catch(e){};
+		console.log(this);
+	}
+};
+
+Croper.prototype._installGlobalProperty = function(){
+	this._defaultHander = defaultHander;
+	this.version = '1.0.0';
+};
+
 
 Croper.prototype._loadImg = function(srcOrImg,callback){
 	var that = this,
@@ -32,6 +84,7 @@ Croper.prototype._loadImg = function(srcOrImg,callback){
 			throw new Error('Image source ' + srcOrImg + ' cannot found');
 		};
 	}
+	image.setAttribute('crossOrigin','anonymous');
 	image.onload = function(){
 		var canvas = document.createElement('canvas'),
 			ctx = canvas.getContext('2d');
@@ -160,18 +213,38 @@ Croper.prototype._initCropBox = function(){
 };
 
 Croper.prototype._initEvent = function(){
-	var canvas = this.canvas;
-	canvas.addEventListener('mousedown',this.beginDrap.bind(this),false);
+	var canvas = this.canvas,
+		defaultHander = this._defaultHander;
+
+	canvas.addEventListener('mousedown',defaultHander.beginDrag.bind(this),false);
+	canvas.addEventListener('mousemove',defaultHander.dragging.bind(this),false);
+	canvas.addEventListener('mouseup',defaultHander.endDrag.bind(this),false);
 };
 
-Croper.prototype.beginDrap = function(){
-	this.isDragging = true;
-};
-Croper.prototype.dragging = function(){};
-Croper.prototype.endDrap = function(){
-	this.isDragging = false;
+Croper.prototype.cut = function(){
+	var canvas = this.canvas,
+		canvasWidth = this.width,
+		canvasHeight = this.height,
+		cropBox = this.cropBox,
+		x = cropBox.x,
+		y = cropBox.y,
+		width = cropBox.width,
+		height = cropBox.height,
+		tempCanvas = document.createElement('canvas'),
+		tempCtx = tempCanvas.getContext('2d');
+	tempCanvas.width = width;
+	tempCanvas.height = height;
+
+	tempCtx.drawImage(canvas,-x,-y,width,height);
+
+	return canvas.toDataURL(this.type,this.quality);
 };
 
+Croper.prototype.destory = function(){
+	var defaultHander = this._defaultHander;
+
+	canvas.removeEventListener('mousedown',defaultHander.beginDrag,false);
+};
 
 Croper.prototype.showCropper = function(){
 	var canvas = this.canvas,
@@ -229,13 +302,13 @@ CropBox.prototype.draw = function(x,y){
 	var canvas = this.canvas,
 		ctx = canvas.getContext('2d'),
 		canvasWidth = canvas.width,
-		canvasWidth = canvas.height,
+		canvasHeight = canvas.height,
 		width = this.width,
 		height = this.height,
 		hSize = this.hSize,
 		vSize = this.vSize;
-	x = x === undefined ? this.x : x;
-	y = y === undefined ? this.y : y;
+	this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
+	this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
 
 	ctx.strokeStyle = this.strokeStyle;
 	ctx.lineWidth = this.lineWidth;

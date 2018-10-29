@@ -24,11 +24,8 @@
 	    .clearfix { *zoom:1; }
 
 		.model{
-			position: fixed;
-			top: 0;
-			left: 0;
 			width: 100%;
-			height: 95%;
+			height: 600px;
 			background: rgba(0,0,0,0.5);
 			z-index: 9999;
 			text-align: center;
@@ -39,6 +36,21 @@
 		.model canvas{
 			
 		}
+
+		.sure{
+			width: 100%;
+			height: 40px;
+			line-height: 40px;
+			text-align: center;
+			background: #276584;
+			color: #fff;
+			font-size: 20px;
+			cursor: pointer
+		}
+		.preview{
+			width: 100%;
+			text-align: center;
+		}
 	</style>
 </head>
 <body>
@@ -46,18 +58,29 @@
 	<div class="model" id="crop">
 	</div>
 
+	<div class="sure">
+		确定
+	</div>
+
+	<div class="preview"></div>
+
 	<script type="text/javascript" src="js/Cropping.js"></script>
 	<script type="text/javascript">
 		
 		window.addEventListener('DOMContentLoaded',ready,false);
 
 		function ready(){
-			cropping('images/test.jpg',{
+			var croper = cropping('images/test.jpg',{
 				viewEl: '#crop',
 				beforeCrop: function(){
 					console.log('before crop');
 				}
 			});
+
+			document.querySelector('.sure').addEventListener('click',function(){
+				var img = croper.cut();
+				console.log(img);
+			},false);
 		}
 
 
