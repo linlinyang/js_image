@@ -237,6 +237,10 @@ Croper.prototype.cut = function(){
 	tempCanvas.height = height;
 
 	tempCtx.drawImage(canvas,x,y,width,height,0,0,width,height);
+	tempCtx.mozImageSmoothingEnabled = false;
+    tempCtx.webkitImageSmoothingEnabled = false;
+    tempCtx.msImageSmoothingEnabled = false;
+    tempCtx.imageSmoothingEnabled = false;
 
 	return tempCanvas.toDataURL(this.type,this.quality);
 };
