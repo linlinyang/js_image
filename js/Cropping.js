@@ -229,8 +229,8 @@ Croper.prototype.cut = function(){
 		lineWidth = cropBox.lineWidth,
 		x = cropBox.x + lineWidth,
 		y = cropBox.y + lineWidth,
-		width = cropBox.width - lineWidth,
-		height = cropBox.height - lineWidth,
+		width = cropBox.width,
+		height = cropBox.height,
 		tempCanvas = document.createElement('canvas'),
 		tempCtx = tempCanvas.getContext('2d');
 	tempCanvas.width = width;
@@ -296,8 +296,8 @@ CropBox.prototype._init = function(){
 	this.height = height = height ? height : size / 2;
 	this.hSize = coverStrToNum(this.stokeHeight,width);
 	this.vSize = coverStrToNum(this.stokeHeight,height);
-	this.x = x === undefined ? (canvasWidth - width) / 2 : x;
-	this.y = y === undefined ? (canvasHeight - height) / 2 : y;
+	this.x = x === undefined ? (canvasWidth - width - lineWidth * 2) / 2 : x;
+	this.y = y === undefined ? (canvasHeight - height - lineWidth * 2) / 2 : y;
 
 };
 
@@ -306,10 +306,11 @@ CropBox.prototype.draw = function(x,y){
 		ctx = canvas.getContext('2d'),
 		canvasWidth = canvas.width,
 		canvasHeight = canvas.height,
-		width = this.width,
-		height = this.height,
-		hSize = this.hSize,
-		vSize = this.vSize;
+		lineWidth = this.lineWidth,
+		width = this.width + lineWidth * 2,
+		height = this.height + lineWidth * 2,
+		hSize = this.hSize + lineWidth,
+		vSize = this.vSize + lineWidth;
 	this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
 	this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
 
@@ -333,6 +334,9 @@ CropBox.prototype.draw = function(x,y){
 	ctx.moveTo(x,y + vSize);
 	ctx.lineTo(x,y);
 	ctx.stroke();
+}
+CropBox.prototype.dashed = function(x,y){
+
 }
 
 function extend(to,from){
