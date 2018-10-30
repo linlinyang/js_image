@@ -70,6 +70,7 @@
 		window.addEventListener('DOMContentLoaded',ready,false);
 
 		function ready(){
+			//https://twistedsifter.files.wordpress.com/2016/07/dulmen_bornste_waldweg.jpg
 			var croper = cropping('images/test.jpg',{
 				viewEl: '#crop',
 				beforeCrop: function(){
@@ -78,8 +79,12 @@
 			});
 
 			document.querySelector('.sure').addEventListener('click',function(){
-				var img = croper.cut();
-				console.log(img);
+				var src = croper.cut(),
+					img = new Image();
+				img.onload = function(){
+					document.querySelector('.preview').appendChild(this);
+				};
+				img.src = src;
 			},false);
 		}
 

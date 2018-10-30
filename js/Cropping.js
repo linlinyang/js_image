@@ -226,18 +226,19 @@ Croper.prototype.cut = function(){
 		canvasWidth = this.width,
 		canvasHeight = this.height,
 		cropBox = this.cropBox,
-		x = cropBox.x,
-		y = cropBox.y,
-		width = cropBox.width,
-		height = cropBox.height,
+		lineWidth = cropBox.lineWidth,
+		x = cropBox.x + lineWidth,
+		y = cropBox.y + lineWidth,
+		width = cropBox.width - lineWidth,
+		height = cropBox.height - lineWidth,
 		tempCanvas = document.createElement('canvas'),
 		tempCtx = tempCanvas.getContext('2d');
 	tempCanvas.width = width;
 	tempCanvas.height = height;
 
-	tempCtx.drawImage(canvas,-x,-y,width,height);
+	tempCtx.drawImage(canvas,x,y,width,height,0,0,width,height);
 
-	return canvas.toDataURL(this.type,this.quality);
+	return tempCanvas.toDataURL(this.type,this.quality);
 };
 
 Croper.prototype.destory = function(){
@@ -287,8 +288,10 @@ CropBox.prototype._init = function(){
 		width = this.width,
 		height = this.height,
 		x = this.x,
-		y = this.y;
+		y = this.y,
+		lineWidth = this.lineWidth;
 
+	this.lineWidth = lineWidth = Math.max(lineWidth,1);
 	this.width = width = width ? width : size / 2;
 	this.height = height = height ? height : size / 2;
 	this.hSize = coverStrToNum(this.stokeHeight,width);
