@@ -233,43 +233,16 @@
 	};
 
 	Croper.prototype._beginDrag = function(e){
-		this.isDragging = true;
-		var cropBox = this._cropBox,
-			x = cropBox.x,
-			y = cropBox.y;
-		this._distanceX = e.offsetX - x;
-		this._distanceY = e.offsetY - y;
 		callhook(this,'beforeDrag');
+		this._cropBox.beforeDrag && this._cropBox.beforeDrag(e.offsetX,e.offsetY);
 	};
 	Croper.prototype._dragging = function(e){
-		var canvas = this.canvas,
-			cropBox = this._cropBox,
-			x = e.offsetX,
-			y = e.offsetY,
-			startX = cropBox.x,
-			startY = cropBox.y,
-			cropWidth = cropBox.width,
-			cropHeight = cropBox.height;
-
-		if(x < startX || x > (startX + cropWidth) || y < startY || y > (startY + cropHeight)){
-			canvas.style.cursor = 'default';
-			return ;
-		}
-		if(this.isDragging){
-			this.drawImage();
-			cropBox.draw(x - this._distanceX,y - this._distanceY);
-		}
-		canvas.style.cursor = 'move';
 		callhook(this,'dragging');
+		this._cropBox.dragging && this._cropBox.dragging(e.offsetX,e.offsetY);
 	};
 	Croper.prototype._endDrag = function(){
-		this.canvas.style.cursor = 'move';
-		this.isDragging = false;
-		try{
-			delete this._distanceX;
-			delete this._distanceY;
-		}catch(e){};
 		callhook(this,'endDrag');
+		this._cropBox.endDrag && this._cropBox.endDrag();
 	};
 
 	Croper.prototype.cut = function(){
@@ -348,6 +321,37 @@
 		ctx.stroke();
 	};
 
+	CropBox.prototype.beforeDrag = function(offsetX,offsetY){
+		this.isDragging = true;
+		this._distanceX = offsetX - this.x;
+		this._distanceY = offsetY - this.y;
+	};
+	CropBox.prototype.dragging = function(x,y){
+		var canvas = this.canvas,
+			startX = this.x,
+			startY = this.y,
+			cropWidth = this.width,
+			cropHeight = this.height;
+
+		if(x < startX || x > (startX + cropWidth) || y < startY || y > (startY + cropHeight)){
+			canvas.style.cursor = 'default';
+			return ;
+		}
+		if(this.isDragging){
+			this._parent.drawImage();
+			this.draw(x - this._distanceX,y - this._distanceY);
+		}
+		canvas.style.cursor = 'move';
+	};
+	CropBox.prototype.endDrag = function(){
+		this.canvas.style.cursor = 'move';
+		this.isDragging = false;
+		try{
+			delete this._distanceX;
+			delete this._distanceY;
+		}catch(e){};
+	};
+
 	CropBox.prototype.cut = function(){
 		var canvas = this.canvas,
 			cwidth = this.cwidth,
@@ -372,9 +376,48 @@
 	};
 
 	function GridCropBox(options){
-		CropBox(options);
+		assign(this,{
+			dotType: 'rect'
+		});
+		CropBox.call(this,options);
 	}
 	GridCropBox.prototypeExtend(CropBox);
+	GridCropBox.prototype.draw = function(x,y){
+		var canvas = this.canvas,
+			ctx = canvas.getContext('2d'),
+			canvasWidth = canvas.width,
+			canvasHeight = canvas.height,
+			lineWidth = this.lineWidth,
+			width = this.width + lineWidth * 2,
+			height = this.height + lineWidth * 2,
+			strokWidth = this.strokWidth + lineWidth,
+			strokHeight = this.strokHeight + lineWidth;
+		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
+		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
+
+		ctx.strokeStyle = this.strokeStyle;
+		ctx.lineWidth = this.lineWidth;
+		ctx.strokeStyle = this.strokeStyle;
+		ctx.lineWidth = this.lineWidth;
+		ctx.beginPath();
+		ctx.moveTo(x,y);
+		ctx.lineTo(x + strokWidth,y);
+		ctx.moveTo(x + width - strokWidth,y);
+		ctx.lineTo(x + width,y);
+		ctx.moveTo(x + width,y);
+		ctx.lineTo(x + width,y + strokHeight);
+		ctx.moveTo(x + width,y + height - strokHeight);
+		ctx.lineTo(x + width,y + height);
+		ctx.moveTo(x + width,y + height);
+		ctx.lineTo(x + width - strokWidth,y + height);
+		ctx.moveTo(x + strokWidth,y + height);
+		ctx.lineTo(x,y + height);
+		ctx.moveTo(x,y + height);
+		ctx.lineTo(x,y + height - strokHeight);
+		ctx.moveTo(x,y + strokHeight);
+		ctx.lineTo(x,y);
+		ctx.stroke();
+	};
 
 
 	function jCrop(srcOrImg,options){
