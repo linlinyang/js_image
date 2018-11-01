@@ -374,6 +374,10 @@
 			tempCtx = tempCanvas.getContext('2d');
 		tempCanvas.width = imgWidth;
 		tempCanvas.height = imgHeight;
+		tempCtx.mozImageSmoothingEnabled = false;
+	    tempCtx.webkitImageSmoothingEnabled = false;
+	    tempCtx.msImageSmoothingEnabled = false;
+	    tempCtx.imageSmoothingEnabled = false;
 
 		tempCtx.clearRect(0,0,imgWidth,imgHeight);
 		tempCtx.drawImage(img,0,0,imgWidth,imgHeight);
@@ -382,6 +386,10 @@
 			resCtx = resCanvas.getContext('2d');
 		resCanvas.width = width;
 		resCanvas.height = height;
+		resCtx.mozImageSmoothingEnabled = false;
+	    resCtx.webkitImageSmoothingEnabled = false;
+	    resCtx.msImageSmoothingEnabled = false;
+	    resCtx.imageSmoothingEnabled = false;
 
 		resCtx.clearRect(0,0,imgWidth,imgHeight);
 		resCtx.drawImage(tempCanvas,x,y,width,height,0,0,width,height);
