@@ -258,8 +258,7 @@
 	function CropBox(options){
 		assign(this,{
 			lineWidth: 3,
-			strokeStyle: 'red',
-			stokeHeight: '20%'
+			strokeStyle: 'red'
 		},options);
 
 		this._init();
@@ -280,8 +279,6 @@
 		this.lineWidth = lineWidth = Math.max(lineWidth,1);
 		this.width = width = width ? width : size / 2;
 		this.height = height = height ? height : size / 2;
-		this.strokWidth = width * 0.2;
-		this.strokHeight = height * 0.2;
 		this.x = x === undefined ? (canvasWidth - width - lineWidth * 2) / 2 : x;
 		this.y = y === undefined ? (canvasHeight - height - lineWidth * 2) / 2 : y;
 
@@ -295,8 +292,8 @@
 			lineWidth = this.lineWidth,
 			width = this.width,
 			height = this.height,
-			strokWidth = this.strokWidth,
-			strokHeight = this.strokHeight;
+			strokWidth = width * 0.2,
+			strokHeight = height * 0.2;
 		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
 		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
 
@@ -398,9 +395,6 @@
 	};
 
 	function GridCropBox(options){
-		assign(this,{
-			dotType: 'rect'
-		});
 		CropBox.call(this,options);
 	}
 	GridCropBox.prototypeExtend(CropBox);
@@ -409,44 +403,61 @@
 			ctx = canvas.getContext('2d'),
 			canvasWidth = canvas.width,
 			canvasHeight = canvas.height,
-			lineWidth = this.lineWidth,
 			width = this.width,
 			height = this.height,
-			strokWidth = this.strokWidth,
-			strokHeight = this.strokHeight;
-		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
-		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
+			radius = 10,
+			strokWidth = (width - radius * 2 * 4) / 3,
+			strokHeight = (height - radius * 2 * 4) / 3;
+		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width - radius * 2 - 0.5);
+		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height - radius * 2 - 0.5);
 
-		/*
-		* 1px line has bug in canvas,must start with 0.5px
-		* line center inside line,move it to outside
-		*/
-		x += lineWidth / 2;
-		y += lineWidth / 2;
-		width = width - lineWidth;
-		height = height - lineWidth;
+		x += 0.5;
+		y += 0.5;
 
 		ctx.strokeStyle = this.strokeStyle;
-		ctx.lineWidth = lineWidth;
 		ctx.beginPath();
-		ctx.moveTo(x,y);
-		ctx.lineTo(x + strokWidth,y);
-		ctx.moveTo(x + width - strokWidth,y);
-		ctx.lineTo(x + width,y);
-		ctx.moveTo(x + width,y);
-		ctx.lineTo(x + width,y + strokHeight);
-		ctx.moveTo(x + width,y + height - strokHeight);
-		ctx.lineTo(x + width,y + height);
-		ctx.moveTo(x + width,y + height);
-		ctx.lineTo(x + width - strokWidth,y + height);
-		ctx.moveTo(x + strokWidth,y + height);
-		ctx.lineTo(x,y + height);
-		ctx.moveTo(x,y + height);
-		ctx.lineTo(x,y + height - strokHeight);
-		ctx.moveTo(x,y + strokHeight);
-		ctx.lineTo(x,y);
+
+		var dTemp = drawDotLine(ctx,'l2r',x,y,radius,strokWidth);
+		dTemp = drawDotLine(ctx,'t2b',dTemp.x,dTemp.y,radius,strokWidth);
+
 		ctx.stroke();
 	};
+
+	function drawDotLine(ctx,dir,x,y,radius,distance){
+		var dx,dy;
+		ctx.beginPath();
+		switch(dir){
+			case 'l2r':
+				ctx.arc(x + radius,y,radius,0,2*Math.PI);
+				ctx.moveTo(x + radius * 2,y);
+				ctx.lineTo(dx = x + radius * 2 + distance,dy = y);
+				break;
+			case 'r2l':
+				ctx.arc(x - radius,y,radius,0,2*Math.PI);
+				ctx.beginPath();
+				ctx.moveTo(x - radius * 2,y);
+				ctx.lineTo(x - radius * 2 - distance,y);
+				break;
+			case 't2b':
+				ctx.arc(x,y + radius,radius,0,2*Math.PI);
+				//ctx.beginPath();
+				ctx.moveTo(x,y + radius * 2);
+				ctx.lineTo(x,y + radius * 2 + distance);
+				break;
+			case 'b2t':
+				ctx.arc(x,y - radius,radius,0,2*Math.PI);
+				ctx.beginPath();
+				ctx.moveTo(x,y - radius * 2);
+				ctx.lineTo(x,y - radius * 2 - distance);
+				break;
+		}
+
+		ctx.stroke();
+		return {
+			x: dx,
+			y: dy
+		};
+	}
 
 
 	function jCrop(srcOrImg,options){
