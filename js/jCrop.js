@@ -210,7 +210,8 @@
 				cwidth: this._imgWidth,
 				cheight: this._imgHeight,
 				type: this.type,
-				quality: this.quality
+				quality: this.quality,
+				_img: this._img
 			};
 		switch(type){
 			case 'grid':
@@ -292,15 +293,24 @@
 			canvasWidth = canvas.width,
 			canvasHeight = canvas.height,
 			lineWidth = this.lineWidth,
-			width = this.width + lineWidth * 2,
-			height = this.height + lineWidth * 2,
-			strokWidth = this.strokWidth + lineWidth,
-			strokHeight = this.strokHeight + lineWidth;
+			width = this.width,
+			height = this.height,
+			strokWidth = this.strokWidth,
+			strokHeight = this.strokHeight;
 		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
 		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
 
+		/*
+		* 1px line has bug in canvas,must start with 0.5px
+		* line center inside line,move it to outside
+		*/
+		x += lineWidth / 2;
+		y += lineWidth / 2;
+		width = width - lineWidth;
+		height = height - lineWidth;
+
 		ctx.strokeStyle = this.strokeStyle;
-		ctx.lineWidth = this.lineWidth;
+		ctx.lineWidth = lineWidth;
 		ctx.beginPath();
 		ctx.moveTo(x,y);
 		ctx.lineTo(x + strokWidth,y);
@@ -353,26 +363,30 @@
 	};
 
 	CropBox.prototype.cut = function(){
-		var canvas = this.canvas,
-			cwidth = this.cwidth,
-			cheight = this.cheight,
-			lineWidth = this.lineWidth,
-			x = this.x + lineWidth,
-			y = this.y + lineWidth,
+		var img = this._img,
+			imgWidth = img.width,
+			imgHeight = img.height,
+			x = this.x,
+			y = this.y,
 			width = this.width,
 			height = this.height,
 			tempCanvas = document.createElement('canvas'),
 			tempCtx = tempCanvas.getContext('2d');
-		tempCanvas.width = width;
-		tempCanvas.height = height;
+		tempCanvas.width = imgWidth;
+		tempCanvas.height = imgHeight;
 
-		tempCtx.drawImage(canvas,x,y,width,height,0,0,width,height);
-		tempCtx.mozImageSmoothingEnabled = false;
-	    tempCtx.webkitImageSmoothingEnabled = false;
-	    tempCtx.msImageSmoothingEnabled = false;
-	    tempCtx.imageSmoothingEnabled = false;
+		tempCtx.clearRect(0,0,imgWidth,imgHeight);
+		tempCtx.drawImage(img,0,0,imgWidth,imgHeight);
 
-		return tempCanvas.toDataURL(this.type,this.quality);
+		var resCanvas = document.createElement('canvas'),
+			resCtx = resCanvas.getContext('2d');
+		resCanvas.width = width;
+		resCanvas.height = height;
+
+		resCtx.clearRect(0,0,imgWidth,imgHeight);
+		resCtx.drawImage(tempCanvas,x,y,width,height,0,0,width,height);
+
+		return resCanvas.toDataURL(this.type,this.quality);
 	};
 
 	function GridCropBox(options){
@@ -388,17 +402,24 @@
 			canvasWidth = canvas.width,
 			canvasHeight = canvas.height,
 			lineWidth = this.lineWidth,
-			width = this.width + lineWidth * 2,
-			height = this.height + lineWidth * 2,
-			strokWidth = this.strokWidth + lineWidth,
-			strokHeight = this.strokHeight + lineWidth;
+			width = this.width,
+			height = this.height,
+			strokWidth = this.strokWidth,
+			strokHeight = this.strokHeight;
 		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
 		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
 
+		/*
+		* 1px line has bug in canvas,must start with 0.5px
+		* line center inside line,move it to outside
+		*/
+		x += lineWidth / 2;
+		y += lineWidth / 2;
+		width = width - lineWidth;
+		height = height - lineWidth;
+
 		ctx.strokeStyle = this.strokeStyle;
-		ctx.lineWidth = this.lineWidth;
-		ctx.strokeStyle = this.strokeStyle;
-		ctx.lineWidth = this.lineWidth;
+		ctx.lineWidth = lineWidth;
 		ctx.beginPath();
 		ctx.moveTo(x,y);
 		ctx.lineTo(x + strokWidth,y);

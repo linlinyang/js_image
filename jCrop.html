@@ -74,12 +74,23 @@
 		function ready(){
 			var ss = jCrop('images/cat.jpg',{
 				el: '#crop',
-				cropType: 'grid',
+				/*cropType: 'grid',*/
 				beforeCreate: function(){
 					console.log('before crop');
 				}
 			});
 			console.log(ss);
+			document.querySelector('.sure').addEventListener('click',function(){
+				var img = new Image();
+				img.src = ss.cut();
+				img.onload = function(){
+					var prev = document.querySelector('.preview');
+					prev.firstElementChild && prev.removeChild(prev.firstElementChild);
+					prev.appendChild(img);
+				}
+				/*var prev = document.querySelector('.preview');
+				prev.appendChild(ss.cut());*/
+			},false);
 			
 
 			/*document.querySelector('#file').addEventListener('change',function(e){
