@@ -65,6 +65,13 @@
 		}
 	}
 
+	/*
+	* computed distance to two points
+	*/
+	function distanceComputed(sx,sy,dx,dy){
+		return Math.sqrt(Math.pow(dx - sx,2) + Math.pow(dy - sy,2));
+	}
+
 	var uid = 0;
 
 	function Croper(srcOrImg,options){
@@ -405,54 +412,101 @@
 			canvasHeight = canvas.height,
 			width = this.width,
 			height = this.height,
-			radius = 10,
-			strokWidth = (width - radius * 2 * 4) / 3,
-			strokHeight = (height - radius * 2 * 4) / 3;
-		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width - radius * 2 - 0.5);
-		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height - radius * 2 - 0.5);
-
-		x += 0.5;
-		y += 0.5;
+			radius = 4;
+		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
+		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
 
 		ctx.strokeStyle = this.strokeStyle;
 		ctx.beginPath();
 
-		var dTemp = drawDotLine(ctx,'l2r',x,y,radius,strokWidth);
-		dTemp = drawDotLine(ctx,'t2b',dTemp.x,dTemp.y,radius,strokWidth);
+		drawGrid(ctx,x,y,width,height,radius,3);
 
 		ctx.stroke();
 	};
 
-	function drawDotLine(ctx,dir,x,y,radius,distance){
-		var dx,dy;
+	function drawGrid(ctx,x,y,width,height,radius,lineNums){
+		var strokWidth = (width - radius * 2 * (lineNums + 1)) / lineNums,
+			strokHeight = (height - radius * 2 * (lineNums + 1)) / lineNums,
+			lineIndex = 0,
+			totalLines = lineNums * 4,
+			directions = ['l2r','t2b','r2l','b2t'],
+			nowIndex = Math.floor(lineIndex / lineNums),
+			point = {
+				x: x,
+				y: y
+			};
+
+		while(directions[nowIndex]){
+			point = drawDotLine(ctx,directions[nowIndex],point,radius,
+				(nowIndex & 1)
+			 	? strokWidth 
+			 	: strokHeight,lineIndex % lineNums == 0);
+			nowIndex = Math.floor(++lineIndex / lineNums);
+		}
+
+		drawDashLine(ctx,100,100,100);
+	}
+
+	function drawDashLine(ctx,sx,sy,dx,dy,dashLength){
+		dashLength = dashLength || 5;
+
+		var distance = distanceComputed(sx,sy,dx,dy),
+			totalDots = Math.floor(distance / dashLength);
+		ctx.beginPath();
+
+		for(var i = 0; i < totalDots; i++){
+			var x = sx + ((dx - sx) / totalDots) * i,
+				y = sy + ((dy - sy) / totalDots) * i;
+
+			ctx[(i & 1) ? 'moveTo' : 'lineTo'](x,y);
+		}
+
+		ctx.stroke();
+	}
+
+	function drawDotLine(ctx,dir,point,radius,distance,isBegin){
+		var PI = 2 * Math.PI,
+			x = point.x,
+			y = point.y,
+			dx,dy;
 		ctx.beginPath();
 		switch(dir){
 			case 'l2r':
-				ctx.arc(x + radius,y,radius,0,2*Math.PI);
+				ctx.arc(x + radius,y,radius,0,PI);
 				ctx.moveTo(x + radius * 2,y);
-				ctx.lineTo(dx = x + radius * 2 + distance,dy = y);
+				ctx.lineTo(dx = (x + radius * 2 + distance),dy  =y);
 				break;
 			case 'r2l':
-				ctx.arc(x - radius,y,radius,0,2*Math.PI);
-				ctx.beginPath();
+				if(isBegin){
+					x += radius;
+					y += radius;
+				}
+				ctx.arc(x - radius,y,radius,0,PI);
 				ctx.moveTo(x - radius * 2,y);
-				ctx.lineTo(x - radius * 2 - distance,y);
+				ctx.lineTo(dx = (x - radius * 2 - distance),dy = y);
 				break;
 			case 't2b':
-				ctx.arc(x,y + radius,radius,0,2*Math.PI);
-				//ctx.beginPath();
+				if(isBegin){
+					x += radius;
+					y -= radius;
+				}
+				ctx.arc(x,y + radius,radius,0,PI);
 				ctx.moveTo(x,y + radius * 2);
-				ctx.lineTo(x,y + radius * 2 + distance);
+				ctx.lineTo(dx = x,dy = (y + radius * 2 + distance));
 				break;
 			case 'b2t':
-				ctx.arc(x,y - radius,radius,0,2*Math.PI);
-				ctx.beginPath();
+				if(isBegin){
+					x -= radius;
+					y += radius;
+				}
+				ctx.arc(x,y - radius,radius,0,PI);
 				ctx.moveTo(x,y - radius * 2);
-				ctx.lineTo(x,y - radius * 2 - distance);
+				ctx.lineTo(dx = x,dy = (y - radius * 2 - distance));
 				break;
 		}
 
 		ctx.stroke();
+
 		return {
 			x: dx,
 			y: dy
