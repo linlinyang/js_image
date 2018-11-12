@@ -39,8 +39,8 @@
 			return Object.create(null);
 		}
 
-		while(--len){
-			var from = arguments[len];
+		for(var i = 1; i < len; i++){
+			var from = arguments[i];
 			if(!isObject(from)){
 				continue ;
 			}
@@ -233,7 +233,8 @@
 				cheight: this._imgHeight,
 				type: this.type,
 				quality: this.quality,
-				_img: this._img
+				_img: this._img,
+				resizable: this.resizable
 			};
 		switch(type){
 			case 'grid':
@@ -279,8 +280,11 @@
 
 	function CropBox(options){
 		assign(this,{
-			lineWidth: 3,
-			strokeStyle: 'red'
+			strokeStyle: '#39f',
+			resizable: false,
+			dashStyle: 'rgba(254,254,254,0.3)',
+			fillStyle: '#39f',
+			dotSize: 5
 		},options);
 
 		this._init();
@@ -295,14 +299,12 @@
 			width = this.width,
 			height = this.height,
 			x = this.x,
-			y = this.y,
-			lineWidth = this.lineWidth;
+			y = this.y;
 
-		this.lineWidth = lineWidth = Math.max(lineWidth,1);
 		this.width = width = width ? width : size / 2;
 		this.height = height = height ? height : size / 2;
-		this.x = x === undefined ? (canvasWidth - width - lineWidth * 2) / 2 : x;
-		this.y = y === undefined ? (canvasHeight - height - lineWidth * 2) / 2 : y;
+		this.x = x === undefined ? (canvasWidth - width) / 2 : x;
+		this.y = y === undefined ? (canvasHeight - height) / 2 : y;
 
 	};
 
@@ -311,8 +313,8 @@
 			canvasHeight = this.cheight,
 			width = this.width,
 			height = this.height;
-		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
-		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
+		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width - 1);
+		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height - 1);
 
 		this.drawShadow(x,y);
 		this.drawContent(x,y);
@@ -339,43 +341,131 @@
 			ctx = canvas.getContext('2d'),
 			canvasWidth = this.cWidth,
 			canvasHeight = this.cHeight,
-			lineWidth = this.lineWidth,
 			width = this.width,
 			height = this.height,
-			strokWidth = width * 0.2,
-			strokHeight = height * 0.2;
+			strokeStyle = this.strokeStyle;
 
-		/*
-		* 1px line has bug in canvas,must start with 0.5px
-		* line center inside line,move it to outside
-		*/
-		x += lineWidth / 2;
-		y += lineWidth / 2;
-		width = width - lineWidth;
-		height = height - lineWidth;
-
-		ctx.strokeStyle = this.strokeStyle;
-		ctx.lineWidth = lineWidth;
-		ctx.beginPath();
-		ctx.moveTo(x,y);
-		ctx.lineTo(x + strokWidth,y);
-		ctx.moveTo(x + width - strokWidth,y);
-		ctx.lineTo(x + width,y);
-		ctx.moveTo(x + width,y);
-		ctx.lineTo(x + width,y + strokHeight);
-		ctx.moveTo(x + width,y + height - strokHeight);
-		ctx.lineTo(x + width,y + height);
-		ctx.moveTo(x + width,y + height);
-		ctx.lineTo(x + width - strokWidth,y + height);
-		ctx.moveTo(x + strokWidth,y + height);
-		ctx.lineTo(x,y + height);
-		ctx.moveTo(x,y + height);
-		ctx.lineTo(x,y + height - strokHeight);
-		ctx.moveTo(x,y + strokHeight);
-		ctx.lineTo(x,y);
-		ctx.stroke();
+		drawGrid(ctx,x,y,width,height,strokeStyle,this.dashStyle);
+		this.resizable && addDotsOnGrid(ctx,x,y,width,height,Math.max(this.dotSize,1),this.fillStyle);
 
 	};
+
+	function drawGrid(ctx,x,y,width,height,strokeStyle,dashStyle){
+		/*
+		* canvas has bugs on draw 1px line,fixed it by covert coordinate
+		* @example 
+		*  (10,20) => (10.5,20.5)
+		*  (10.3,20.7) => (10.5,20.5)
+		*/
+		ctx.beginPath();
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = strokeStyle;
+		ctx.rect(
+			covertNumToHalf(x),
+			covertNumToHalf(y),
+			width,
+			height
+		);//Draw the crop box grid
+		ctx.stroke();
+
+		/*
+		* Draw two dashes in each of the horizontal and vertical directions
+		*/
+		drawDashLine(
+			ctx,
+			covertNumToHalf(x + width / 3),
+			covertNumToHalf(y),
+			covertNumToHalf(x + width / 3),
+			covertNumToHalf(y + height),
+			dashStyle
+		);
+		drawDashLine(
+			ctx,
+			covertNumToHalf(x + (width / 3) * 2),
+			covertNumToHalf(y),
+			covertNumToHalf(x + (width / 3) * 2),
+			covertNumToHalf(y + height),
+			dashStyle
+		);
+		drawDashLine(
+			ctx,
+			covertNumToHalf(x),
+			covertNumToHalf(y + height / 3),
+			covertNumToHalf(x + width),
+			covertNumToHalf(y + height / 3),
+			dashStyle
+		);
+		drawDashLine(
+			ctx,
+			covertNumToHalf(x),
+			covertNumToHalf(y + (height / 3) * 2),
+			covertNumToHalf(x + width),
+			covertNumToHalf(y + (height / 3) * 2),
+			dashStyle
+		);
+		/*end of draw dashes*/
+	}
+
+	function drawDashLine(ctx,sx,sy,dx,dy,strokeStyle,dashLength){
+		dashLength = dashLength || 3;
+
+		var distance = distanceComputed(sx,sy,dx,dy),
+			totalDots = Math.floor(distance / dashLength);
+		ctx.beginPath();
+		ctx.strokeStyle = strokeStyle || 'rgba(254,254,254,0.3)';
+
+		for(var i = 0; i < totalDots; i++){
+			var x = sx + ((dx - sx) / totalDots) * i,
+				y = sy + ((dy - sy) / totalDots) * i;
+
+			ctx[(i & 1) ? 'lineTo' : 'moveTo'](x,y);
+		}
+
+		ctx.stroke();
+	}
+
+	function covertNumToHalf(num){
+		num = Number(num);
+
+		return parseInt(num) + 0.5;
+	}
+
+	/*
+	* draw dots on the grid for resize it
+	*/
+	function addDotsOnGrid(ctx,x,y,width,height,dotSize,fillStyle){
+		dotSize = dotSize || 5;
+		ctx.fillStyle = fillStyle || '#39f';
+
+		/*
+		* draw dots on first horizontal line in grid
+		*/
+		drawFillRect(ctx,x,y,dotSize);
+		drawFillRect(ctx,x + width / 2,y,dotSize);
+		drawFillRect(ctx,x + width,y,dotSize);
+
+		/*
+		*  draw dots on middle horizontal line in grid
+		*/
+		drawFillRect(ctx,x,y + height / 2,dotSize);
+		drawFillRect(ctx,x + width,y + height / 2,dotSize);
+
+		/*
+		*  draw dots on last horizontal line in grid
+		*/
+		drawFillRect(ctx,x,y + height,dotSize);
+		drawFillRect(ctx,x + width / 2,y + height,dotSize);
+		drawFillRect(ctx,x + width,y + height,dotSize);
+	}
+
+	/*
+	* draw rect by x,y,width,height and fill it
+	*/
+	function drawFillRect(ctx,x,y,size){
+		ctx.beginPath();
+		ctx.rect(x - size / 2,y - size / 2,size,size);
+		ctx.fill();
+	}
 
 	CropBox.prototype.beforeDrag = function(offsetX,offsetY){
 		this.isDragging = true;
@@ -397,7 +487,8 @@
 			this._parent.drawImage();
 			this.draw(x - this._distanceX,y - this._distanceY);
 		}
-		canvas.style.cursor = 'move';
+		//canvas.style.cursor = 'move';
+		mouseWheelCursor(this.canvas,startX,startY,cropWidth,cropHeight,x,y);
 	};
 	CropBox.prototype.endDrag = function(){
 		this.canvas.style.cursor = 'move';
@@ -407,6 +498,41 @@
 			delete this._distanceY;
 		}catch(e){};
 	};
+
+	function mouseWheelCursor(obj,sx,sy,width,height,dx,dy){
+		if(
+			dx < sx 
+			|| dx > (sx + width) 
+			|| dy < sy 
+			|| dy > sy + height
+		){
+			obj.style.cursor = 'default';
+			return 1;
+		}else if(
+			dx < (sx + 2) 
+			|| dx > (sx + width - 2) 
+			|| dy < (sy + 2) 
+			|| dy > (sy + height - 2)
+		){
+			if(dx < (sx + 2) && dy < (sy + 2)){
+				obj.style.cursor = 'nwse-resize';
+				return 10;
+			}else if(dx < (sx + 2) && dy > (sy + height - 2)){
+				obj.style.cursor = 'nesw-resize';
+				return 11;
+			}else if(dx > (sx + width - 2) && dy < (sy + 2)){
+				obj.style.cursor = 'nesw-resize';
+				return 12;
+			}else if(dx > (sx + width - 2) && dy > (sy + height - 2)){
+				obj.style.cursor = 'nwse-resize';
+				return 13;
+			}
+		}else{
+			console.log('ccc');
+			obj.style.cursor = 'move';
+			return 200;
+		}
+	}
 
 	CropBox.prototype.cut = function(){
 		var img = this._img,
@@ -465,52 +591,6 @@
 
 		ctx.stroke();
 	};
-
-	function drawGrid(ctx,x,y,width,height,dotWidth,lineNums){
-		var strokWidth = (width - dotWidth * 2 * (lineNums + 1)) / lineNums,
-			strokHeight = (height - dotWidth * 2 * (lineNums + 1)) / lineNums,
-			lineIndex = 0,
-			totalLines = lineNums * 4,
-			directions = ['l2r','t2b','r2l','b2t'],
-			nowIndex = Math.floor(lineIndex / lineNums),
-			point = {
-				x: x,
-				y: y
-			};
-
-		while(directions[nowIndex]){
-			point = drawDotLine(ctx,directions[nowIndex],point,dotWidth,
-				(nowIndex & 1)
-			 	? strokWidth 
-			 	: strokHeight,lineIndex % lineNums == 0);
-			if(lineIndex % lineNums !== 0){
-				if(lineIndex < lineNums){
-					drawDashLine(ctx,point.x + dotWidth / 2,point.y + dotWidth / 2,point.x + dotWidth / 2,point.y + height - dotWidth);
-				}else if(lineIndex >= lineNums && lineIndex < lineNums * 2){
-					drawDashLine(ctx,point.x,point.y + dotWidth / 2,point.x - width + dotWidth,point.y + dotWidth);
-				}
-			}
-			nowIndex = Math.floor(++lineIndex / lineNums);
-		}
-
-	}
-
-	function drawDashLine(ctx,sx,sy,dx,dy,dashLength){
-		dashLength = dashLength || 5;
-
-		var distance = distanceComputed(sx,sy,dx,dy),
-			totalDots = Math.floor(distance / dashLength);
-		ctx.beginPath();
-
-		for(var i = 0; i < totalDots; i++){
-			var x = sx + ((dx - sx) / totalDots) * i,
-				y = sy + ((dy - sy) / totalDots) * i;
-
-			ctx[(i & 1) ? 'moveTo' : 'lineTo'](x,y);
-		}
-
-		ctx.stroke();
-	}
 
 	function drawDotLine(ctx,dir,point,dotWidth,distance,isBegin){
 		var PI = 2 * Math.PI,
