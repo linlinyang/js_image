@@ -79,7 +79,7 @@
 		if(direction){//counterclockwise
 			ctx.moveTo(x,y);
 			ctx.lineTo(x,y + height)
-			ctx.lineTo(x + width,y + width);
+			ctx.lineTo(x + width,y + height);
 			ctx.lineTo(x + width,y);
 		}else{//clockwise
 			ctx.rect(x,y,width,height);
@@ -237,8 +237,8 @@
 				resizable: this.resizable
 			};
 		switch(type){
-			case 'grid':
-				cropBox = new GridCropBox(cropBoxOpts);
+			case 'circle':
+				cropBox = new CircleCropBox(cropBoxOpts);
 				break;
 			default:
 				cropBox = new CropBox(cropBoxOpts);
@@ -257,16 +257,19 @@
 	};
 
 	Croper.prototype._beginDrag = function(e){
+		var cropBox = this._cropBox;
 		callhook(this,'beforeDrag');
-		this._cropBox.beforeDrag && this._cropBox.beforeDrag(e.offsetX,e.offsetY);
+		cropBox.beforeDrag && cropBox.beforeDrag.call(cropBox,e.offsetX,e.offsetY);
 	};
 	Croper.prototype._dragging = function(e){
+		var cropBox = this._cropBox;
 		callhook(this,'dragging');
-		this._cropBox.dragging && this._cropBox.dragging(e.offsetX,e.offsetY);
+		cropBox.dragging && cropBox.dragging.call(cropBox,e.offsetX,e.offsetY);
 	};
-	Croper.prototype._endDrag = function(){
+	Croper.prototype._endDrag = function(e){
+		var cropBox = this._cropBox;
 		callhook(this,'endDrag');
-		this._cropBox.endDrag && this._cropBox.endDrag();
+		cropBox.endDrag && cropBox.endDrag.call(cropBox,e.offsetX,e.offsetY);
 	};
 
 	Croper.prototype.cut = function(){
@@ -339,8 +342,6 @@
 	CropBox.prototype.drawContent = function(x,y){
 		var canvas = this.canvas,
 			ctx = canvas.getContext('2d'),
-			canvasWidth = this.cWidth,
-			canvasHeight = this.cHeight,
 			width = this.width,
 			height = this.height,
 			strokeStyle = this.strokeStyle;
@@ -467,70 +468,172 @@
 		ctx.fill();
 	}
 
-	CropBox.prototype.beforeDrag = function(offsetX,offsetY){
-		this.isDragging = true;
-		this._distanceX = offsetX - this.x;
-		this._distanceY = offsetY - this.y;
+	CropBox.prototype.beforeDrag = function(x,y){
+		var startX = this.x,
+			startY = this.y;
+		this._distanceX = x - startX;
+		this._distanceY = y - startY;
+		this._hoverStatus = mouseWheelCursor(
+			this.canvas,
+			startX,
+			startY,
+			this.width,
+			this.height,
+			x,
+			y,
+			this.resizable ? this.dotSize : this.resizable
+		);
 	};
 	CropBox.prototype.dragging = function(x,y){
 		var canvas = this.canvas,
 			startX = this.x,
 			startY = this.y,
 			cropWidth = this.width,
-			cropHeight = this.height;
+			cropHeight = this.height,
+			status = this._hoverStatus;
 
-		if(x < startX || x > (startX + cropWidth) || y < startY || y > (startY + cropHeight)){
-			canvas.style.cursor = 'default';
+		mouseWheelCursor(
+			this.canvas,
+			startX,
+			startY,
+			cropWidth,
+			cropHeight,
+			x,
+			y,
+			this.resizable ? this.dotSize : this.resizable
+		);
+
+		if(!status){
 			return ;
 		}
-		if(this.isDragging){
-			this._parent.drawImage();
-			this.draw(x - this._distanceX,y - this._distanceY);
+		this._parent.drawImage();
+		var targetX = x - this._distanceX,
+			targetY = y - this._distanceY;
+		switch(status){
+			case 11://draw on left top
+				this.width = cropWidth - (x - startX);
+				this.height = cropHeight - (y - startY);
+				this.draw(x,y);
+				break ;
+			case 12://drag on left center
+				this.width = cropWidth - (x - startX);
+				this.draw(x,startY);
+				break ;
+			case 13://drag on left bottom
+				this.width = cropWidth - (x - startX);
+				this.height = cropHeight + (y - startY - cropHeight);
+				this.draw(x,startY);
+				break ;
+			case 21://drag on center top
+				this.height = cropHeight - (y - startY);
+				this.draw(startX,y);
+				break ;
+			case 23://drag on center bottom
+				this.height = cropHeight + (y - startY - cropHeight);
+				this.draw(startX,startY);
+				break ;
+			case 31://drag on right top
+				this.width = cropWidth + (x - startX - cropWidth);
+				this.height = cropHeight + (startY - y);
+				this.draw(startX,y);
+				break ;
+			case 32://drag on right center
+				this.width = cropWidth + (x - startX - cropWidth);
+				this.draw(startX,startY);
+				break ;
+			case 33://drag on right bottom
+				this.width = cropWidth + (x - startX - cropWidth);
+				this.height = cropHeight + (y - startY - cropHeight);
+				this.draw(startX,startY);
+				break ;
+			default :
+				this.draw(targetX,targetY);
 		}
-		//canvas.style.cursor = 'move';
-		mouseWheelCursor(this.canvas,startX,startY,cropWidth,cropHeight,x,y);
+
 	};
-	CropBox.prototype.endDrag = function(){
+	CropBox.prototype.endDrag = function(x,y){
+		var startX = this.x,
+			startY = this.y;
+
 		this.canvas.style.cursor = 'move';
-		this.isDragging = false;
+		this._hoverStatus = null;
+		mouseWheelCursor(
+			this.canvas,
+			startX,
+			startY,
+			this.width,
+			this.height,
+			x,
+			y,
+			this.resizable ? this.dotSize : this.resizable
+		);
 		try{
 			delete this._distanceX;
 			delete this._distanceY;
+			delete this._hoverStatus;
 		}catch(e){};
 	};
 
-	function mouseWheelCursor(obj,sx,sy,width,height,dx,dy){
+	function mouseWheelCursor(obj,sx,sy,width,height,dx,dy,innserSpace){
+		if(!innserSpace){//cannot resize cropbox
+			if(
+				dx < sx 
+				|| dx > (sx + width) 
+				|| dy < sy 
+				|| dy > sy + height
+			){//outer of crop box
+				obj.style.cursor = 'default';
+				return 1;
+			}else{//inner of crop box
+				obj.style.cursor = 'move';
+				return 2;
+			}
+		}
+
+		//cropbox is resizable
+		sx -= innserSpace / 2;
+		sy -= innserSpace / 2;
 		if(
 			dx < sx 
-			|| dx > (sx + width) 
+			|| dx > (sx + width + innserSpace) 
 			|| dy < sy 
-			|| dy > sy + height
-		){
+			|| dy > sy + height + innserSpace
+		){//outer of crop box
 			obj.style.cursor = 'default';
 			return 1;
-		}else if(
-			dx < (sx + 2) 
-			|| dx > (sx + width - 2) 
-			|| dy < (sy + 2) 
-			|| dy > (sy + height - 2)
-		){
-			if(dx < (sx + 2) && dy < (sy + 2)){
+		}else if(dx < sx + innserSpace){
+			if(dy < sy + innserSpace){
 				obj.style.cursor = 'nwse-resize';
-				return 10;
-			}else if(dx < (sx + 2) && dy > (sy + height - 2)){
-				obj.style.cursor = 'nesw-resize';
 				return 11;
-			}else if(dx > (sx + width - 2) && dy < (sy + 2)){
-				obj.style.cursor = 'nesw-resize';
-				return 12;
-			}else if(dx > (sx + width - 2) && dy > (sy + height - 2)){
-				obj.style.cursor = 'nwse-resize';
-				return 13;
 			}
-		}else{
-			console.log('ccc');
-			obj.style.cursor = 'move';
-			return 200;
+			if(dy <= sy + height - innserSpace){
+				obj.style.cursor = 'ew-resize';
+				return 12;
+			}
+			obj.style.cursor = 'nesw-resize';
+			return 13;
+		}else if(dx >= sx + innserSpace && dx <= (sx + width - innserSpace)){
+			if(dy < sy + innserSpace){
+				obj.style.cursor = 'ns-resize';
+				return 21;
+			}
+			if(dy <= sy + height - innserSpace){
+				obj.style.cursor = 'move';
+				return 22;
+			}
+			obj.style.cursor = 'ns-resize';
+			return 23;
+		}else if(dx > sx + width -innserSpace){
+			if(dy < sy + innserSpace){
+				obj.style.cursor = 'nesw-resize';
+				return 31;
+			}
+			if(dy <= sy + height - innserSpace){
+				obj.style.cursor = 'ew-resize';
+				return 32;
+			}
+			obj.style.cursor = 'nwse-resize';
+			return 33;
 		}
 	}
 
@@ -569,76 +672,88 @@
 		return resCanvas.toDataURL(this.type,this.quality);
 	};
 
-	function GridCropBox(options){
+	function CircleCropBox(options){
+		/*assign(this,{
+			radius: 
+		});*/
 		CropBox.call(this,options);
 	}
-	GridCropBox.prototypeExtend(CropBox);
-	GridCropBox.prototype.draw = function(x,y){
-		var canvas = this.canvas,
-			ctx = canvas.getContext('2d'),
-			canvasWidth = canvas.width,
-			canvasHeight = canvas.height,
-			width = this.width,
-			height = this.height,
-			dotWidth = 4;
-		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - width);
-		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - height);
+	CircleCropBox.prototypeExtend(CropBox);
+	CircleCropBox.prototype._init = function(){
+		var canvasWidth = this.cwidth,
+			canvasHeight = this.cheight,
+			size = Math.min(canvasWidth,canvasHeight),
+			radius = this.radius,
+			x = this.x,
+			y = this.y;
 
-		ctx.strokeStyle = this.strokeStyle;
-		ctx.beginPath();
+		this.radius = radius = Math.min(radius ? radius : size / 4,size / 2);
+		this.x = x === undefined ? (canvasWidth - 2 * radius) / 2 : x;
+		this.y = y === undefined ? (canvasHeight - 2 * radius) / 2 : y;
 
-		drawGrid(ctx,x,y,width,height,dotWidth,3);
+	};
+	CircleCropBox.prototype.draw = function(x,y){
+		var canvasWidth = this.cwidth,
+			canvasHeight = this.cheight,
+			radius = this.radius;
+		this.x = x = Math.min(Math.max(x === undefined ? this.x : x,0),canvasWidth - 2 * radius);
+		this.y = y = Math.min(Math.max(y === undefined ? this.y : y,0),canvasHeight - 2 * radius);
 
-		ctx.stroke();
+		this.drawShadow(x,y);
+		this.drawContent(x,y);
 	};
 
-	function drawDotLine(ctx,dir,point,dotWidth,distance,isBegin){
-		var PI = 2 * Math.PI,
-			x = point.x,
-			y = point.y,
-			dx,dy;
-		ctx.beginPath();
-		switch(dir){
-			case 'l2r':
-				ctx.rect(x,y - dotWidth / 2,dotWidth,dotWidth);
-				ctx.moveTo(x + dotWidth,y);
-				ctx.lineTo(dx = (x +dotWidth + distance),dy  =y);
-				break;
-			case 'r2l':
-				if(isBegin){
-					x += dotWidth / 2;
-					y += dotWidth / 2;
-				}
-				ctx.rect(x - dotWidth,y - dotWidth / 2,dotWidth,dotWidth);
-				ctx.moveTo(x - dotWidth,y);
-				ctx.lineTo(dx = (x - dotWidth - distance),dy = y);
-				break;
-			case 't2b':
-				if(isBegin){
-					x += dotWidth / 2;
-					y -= dotWidth / 2;
-				}
-				ctx.rect(x - dotWidth / 2,y,dotWidth,dotWidth);
-				ctx.moveTo(x,y + dotWidth);
-				ctx.lineTo(dx = x,dy = (y + dotWidth + distance));
-				break;
-			case 'b2t':
-				if(isBegin){
-					x -= dotWidth / 2;
-					y += dotWidth / 2;
-				}
-				ctx.rect(x - dotWidth / 2,y - dotWidth,dotWidth,dotWidth);
-				ctx.moveTo(x,y - dotWidth);
-				ctx.lineTo(dx = x,dy = (y - dotWidth - distance));
-				break;
-		}
+	CircleCropBox.prototype.drawShadow = function(x,y){
+		var canvas = this.canvas,
+			ctx = canvas.getContext('2d'),
+			radius = this.radius,
+			canvasWidth = this.cwidth,
+			canvasHeight = this.cheight;
 
+		ctx.fillStyle = 'rgba(0,0,0,0.4)';
+		ctx.beginPath();
+		ctx.rect(0,0,canvasWidth,canvasHeight);
+		ctx.arc(x + radius,y + radius,radius,0,2 * Math.PI,true);
+		ctx.fill();
+	};
+
+	CircleCropBox.prototype.drawContent = function(x,y){
+		var canvas = this.canvas,
+			ctx = canvas.getContext('2d'),
+			radius = this.radius,
+			strokeStyle = this.strokeStyle;
+
+		drawCircleBox(ctx,x,y,radius,strokeStyle,this.dashStyle);
+		//this.resizable && addDotsOnGrid(ctx,x,y,width,height,Math.max(this.dotSize,1),this.fillStyle);
+	};
+
+	function drawCircleBox(ctx,x,y,radius,strokeStyle,dashStyle){
+		ctx.beginPath();
+		ctx.strokeStyle = strokeStyle;
+		ctx.arc(x + radius,y + radius,radius,0, 2 * Math.PI);
 		ctx.stroke();
 
-		return {
-			x: dx,
-			y: dy
-		};
+		drawDashLine(
+			ctx,
+			covertNumToHalf(x + radius),
+			covertNumToHalf(y),
+			covertNumToHalf(x + radius),
+			covertNumToHalf(y + radius * 2),
+			dashStyle
+		);
+
+		drawDashLine(
+			ctx,
+			covertNumToHalf(x),
+			covertNumToHalf(y + radius),
+			covertNumToHalf(x + radius * 2),
+			covertNumToHalf(y + radius),
+			dashStyle
+		);
+	}
+
+	function addDotsOnCircle(ctx,x,y,radius,dotSize,fillStyle){
+		
 	}
 
 
