@@ -1,14 +1,14 @@
 (function(win,doc){
-	var MOUSEWHEELMOVE = 2,
-		MOUSEWHEELNWRESIZE = 11,
-		MOUSEWHEELWRESIZE = 12,
-		MOUSEWHEELSWRESIZE = 13,
-		MOUSEWHEELNRESIZE = 21,
-		MOUSEWHEELSRESIZE = 22,
-		MOUSEWHEELNERESIZE = 31,
-		MOUSEWHEELERESIZE = 32,
-		MOUSEWHEELSERESIZE = 33,
-		MOUSEWHEELDEFAULT = 1,
+	var MOUSECURSORMOVE = 2,
+		MOUSECURSORNWRESIZE = 11,
+		MOUSECURSORWRESIZE = 12,
+		MOUSECURSORSWRESIZE = 13,
+		MOUSECURSORNRESIZE = 21,
+		MOUSECURSORSRESIZE = 22,
+		MOUSECURSORNERESIZE = 31,
+		MOUSECURSORERESIZE = 32,
+		MOUSECURSORSERESIZE = 33,
+		MOUSECURSORDEFAULT = 1,
 		DOUBLEPI = 2 * Math.PI;
 
 	/*
@@ -197,6 +197,10 @@
 			img.width = this._imgWidth = width * ratio;
 			img.height = this._imgHeight = height * ratio;
 		}
+
+		this._scaleX = 1;
+		this._scaleY = 1;
+		this._rotateZ = 0;
 	};
 
 	/*
@@ -234,7 +238,10 @@
 	Croper.prototype.drawImage = function(){
 		var canvas = this.canvas,
 			width = this._imgWidth,
-			height = this._imgHeight;
+			height = this._imgHeight,
+			scaleX = this._scaleX,
+			scaleY = this._scaleY,
+			rotateZ = this._rotateZ;
 
 		if(!canvas){
 			this.canvas = canvas = doc.createElement('canvas');
@@ -245,9 +252,18 @@
 		}
 
 		var ctx = canvas.getContext('2d');
-
+		ctx.save();
 		ctx.clearRect(0,0,width,height);
+
+		ctx.translate((1 - scaleX) * width / 2,(1 - scaleY) * height / 2);
+		ctx.scale(scaleX,scaleY);
+		ctx.translate(width / 2,height / 2);
+		ctx.rotate(30 * Math.PI / 180);
+		ctx.translate(-width / 2,-height / 2);
+
 		ctx.drawImage(this._img,0,0,width,height);
+
+		ctx.restore();
 	};
 
 	/*
@@ -299,6 +315,16 @@
 		canvas.addEventListener('mousedown',this._beginDrag.bind(this),false);
 		canvas.addEventListener('mousemove',this._dragging.bind(this),false);
 		canvas.addEventListener('mouseup',this._endDrag.bind(this),false);
+
+		var tempDiv = document.createElement('div'),
+			mouseWheelEvent = 'onwheel' in tempDiv
+								? 'wheel'
+								: doc.onmousewheel !== undefined
+									? 'mousewheel'
+									: 'DOMMouseScroll';
+		tempDiv = null;
+		canvas.addEventListener(mouseWheelEvent,this._scroll.bind(this),false);
+		mouseWheelEvent = undefined;
 	};
 
 	/*
@@ -326,6 +352,27 @@
 		var cropBox = this._cropBox;
 		callhook(this,'endDrag');
 		cropBox.endDrag && cropBox.endDrag.call(cropBox,e.offsetX,e.offsetY);
+	};
+
+	Croper.prototype._scroll = function(e){
+		var type = e.type,
+			wheelDelta = e.wheelDelta
+							? e.wheelDelta / -120
+							: e.deltaY
+								? e.deltaY / 3
+								: e.detail / 3;
+
+		if(wheelDelta === -1){//scroll up
+			this._scaleX = Math.max(0.5,this._scaleX - 0.1); 
+			this._scaleY = Math.max(0.5,this._scaleY - 0.1); 
+
+		}else if(wheelDelta === 1){//scroll down
+			this._scaleX = Math.min(3,this._scaleX + 0.1);
+			this._scaleY = Math.min(3,this._scaleY + 0.1);
+		}
+		
+		this.drawImage();
+		this._cropBox.draw();
 	};
 
 	/*
@@ -569,42 +616,42 @@
 
 		this.mouseWheelPositioning(x,y);
 
-		if(!status || status == MOUSEWHEELDEFAULT){return;}
+		if(!status || status == MOUSECURSORDEFAULT){return;}
 
 		this._parent.drawImage();
 		switch(status){
-			case MOUSEWHEELNWRESIZE://draw on left top
+			case MOUSECURSORNWRESIZE://draw on left top
 				this.width = width - (x - startX);
 				this.height = height - (y - startY);
 				this.draw(x,y);
 				break ;
-			case MOUSEWHEELWRESIZE://drag on left center
+			case MOUSECURSORWRESIZE://drag on left center
 				this.width = width - (x - startX);
 				this.draw(x,startY);
 				break ;
-			case MOUSEWHEELSWRESIZE://drag on left bottom
+			case MOUSECURSORSWRESIZE://drag on left bottom
 				this.width = width - (x - startX);
 				this.height = height + (y - startY - height);
 				this.draw(x,startY);
 				break ;
-			case MOUSEWHEELNRESIZE://drag on center top
+			case MOUSECURSORNRESIZE://drag on center top
 				this.height = height - (y - startY);
 				this.draw(startX,y);
 				break ;
-			case MOUSEWHEELSRESIZE://drag on center bottom
+			case MOUSECURSORSRESIZE://drag on center bottom
 				this.height = height + (y - startY - height);
 				this.draw(startX,startY);
 				break ;
-			case MOUSEWHEELNERESIZE://drag on right top
+			case MOUSECURSORNERESIZE://drag on right top
 				this.width = width + (x - startX - width);
 				this.height = height + (startY - y);
 				this.draw(startX,y);
 				break ;
-			case MOUSEWHEELERESIZE://drag on right center
+			case MOUSECURSORERESIZE://drag on right center
 				this.width = width + (x - startX - width);
 				this.draw(startX,startY);
 				break ;
-			case MOUSEWHEELSERESIZE://drag on right bottom
+			case MOUSECURSORSERESIZE://drag on right bottom
 				this.width = width + (x - startX - width);
 				this.height = height + (y - startY - height);
 				this.draw(startX,startY);
@@ -643,10 +690,10 @@
 				|| y > startY + height
 			){//outer of cropbox
 				canvas.style.cursor = 'default';
-				return MOUSEWHEELDEFAULT;
+				return MOUSECURSORDEFAULT;
 			}else{//inner of cropbox
 				canvas.style.cursor = 'move';
-				return MOUSEWHEELMOVE;
+				return MOUSECURSORMOVE;
 			}
 		}
 
@@ -661,46 +708,46 @@
 			|| y > (startY + height + dotSize)
 		){//outer of cropbox
 			canvas.style.cursor = 'default';
-			return MOUSEWHEELDEFAULT;
+			return MOUSECURSORDEFAULT;
 		}else if(x < startX + dotSize){
 			if(y < startY + dotSize){//left top
 				canvas.style.cursor = 'nw-resize';
-				return MOUSEWHEELNWRESIZE;
+				return MOUSECURSORNWRESIZE;
 			}
 			if(y < startY + height - dotSize){//left center
 				canvas.style.cursor = 'w-resize';
-				return MOUSEWHEELWRESIZE;
+				return MOUSECURSORWRESIZE;
 			}
 			//left bottom
 			canvas.style.cursor = 'sw-resize';
-			return MOUSEWHEELSWRESIZE;
+			return MOUSECURSORSWRESIZE;
 		}else if(
 			x >= startX + dotSize
 			&& x <= (startX + width - dotSize)
 		){
 			if(y < startY + dotSize){//center top
 				canvas.style.cursor = 'n-resize';
-				return MOUSEWHEELNRESIZE;
+				return MOUSECURSORNRESIZE;
 			}
 			if(y <= startY + height - dotSize){//center middle
 				canvas.style.cursor = 'move';
-				return MOUSEWHEELMOVE;
+				return MOUSECURSORMOVE;
 			}
 			//center bottom
 			canvas.style.cursor = 's-resize';
-			return MOUSEWHEELSRESIZE;
+			return MOUSECURSORSRESIZE;
 		}else if(x > startX + width - dotSize){
 			if(y < startY + dotSize){//right top
 				canvas.style.cursor = 'ne-resize';
-				return MOUSEWHEELNERESIZE;
+				return MOUSECURSORNERESIZE;
 			}
 			if(y <= startY + height - dotSize){//right middle
 				canvas.style.cursor = 'e-resize';
-				return MOUSEWHEELERESIZE;
+				return MOUSECURSORERESIZE;
 			}
 			//right bottom
 			canvas.style.cursor = 'se-resize';
-			return MOUSEWHEELSERESIZE;
+			return MOUSECURSORSERESIZE;
 		}
 
 	};
@@ -832,7 +879,7 @@
 				&& y <= startY + radius + dotSize / 2
 			){
 				canvas.style.cursor = 'w-resize';
-				return MOUSEWHEELWRESIZE;
+				return MOUSECURSORWRESIZE;
 			}
 
 			if(
@@ -842,7 +889,7 @@
 				&& y <= startY + dotSize / 2
 			){
 				canvas.style.cursor = 'n-resize';
-				return MOUSEWHEELNRESIZE;
+				return MOUSECURSORNRESIZE;
 			}
 
 			if(
@@ -852,7 +899,7 @@
 				&& y <= startY + 2 * radius + dotSize / 2
 			){
 				canvas.style.cursor = 's-resize';
-				return MOUSEWHEELSRESIZE;
+				return MOUSECURSORSRESIZE;
 			}
 
 			if(
@@ -862,7 +909,7 @@
 				&& y <= startY + radius + dotSize / 2
 			){
 				canvas.style.cursor = 'e-resize';
-				return MOUSEWHEELERESIZE;
+				return MOUSECURSORERESIZE;
 			}
 
 		}
@@ -872,10 +919,10 @@
 		startY += radius;
 		if(distanceComputed(startX,startY,x,y) > radius){
 			canvas.style.cursor = 'default';
-			return MOUSEWHEELDEFAULT;
+			return MOUSECURSORDEFAULT;
 		}else{
 			canvas.style.cursor = 'move';
-			return MOUSEWHEELMOVE;
+			return MOUSECURSORMOVE;
 		}
 
 	};
@@ -890,23 +937,23 @@
 
 		this.mouseWheelPositioning(x,y);
 
-		if(!status || status == MOUSEWHEELDEFAULT){return;}
+		if(!status || status == MOUSECURSORDEFAULT){return;}
 
 		this._parent.drawImage();
 		switch(status){
-			case MOUSEWHEELWRESIZE://drag on left center
+			case MOUSECURSORWRESIZE://drag on left center
 				this.radius = radius - (x - startX) / 2;
 				this.draw(x,startY + (x - startX) / 2);
 				break ;
-			case MOUSEWHEELNRESIZE://drag on center top
+			case MOUSECURSORNRESIZE://drag on center top
 				this.radius = radius - (y - startY) / 2;
 				this.draw(startX + (y - startY) / 2,y);
 				break ;
-			case MOUSEWHEELSRESIZE://drag on center bottom
+			case MOUSECURSORSRESIZE://drag on center bottom
 				this.radius = radius + (y - startY - diameter) / 2;
 				this.draw(startX - (y - startY - diameter) / 2,startY);
 				break ;
-			case MOUSEWHEELERESIZE://drag on right center
+			case MOUSECURSORERESIZE://drag on right center
 				this.radius = radius + (x - startX - diameter) / 2;
 				this.draw(startX,startY - (x - startX - diameter) / 2);
 				break ;
