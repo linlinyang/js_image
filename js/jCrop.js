@@ -11,6 +11,14 @@
 		MOUSECURSORDEFAULT = 1,
 		DOUBLEPI = 2 * Math.PI;
 
+	var tempDiv = document.createElement('div'),
+		MOUSEWHEELEVENT = 'onwheel' in tempDiv
+							? 'wheel'
+							: doc.onmousewheel !== undefined
+								? 'mousewheel'
+								: 'DOMMouseScroll';
+	tempDiv = null;
+
 	/*
 	* class extend by prototype
 	* @params{superClass} Fucntion;The parent class
@@ -180,7 +188,6 @@
 	* init the canvas and draw back img,crop box when the img has been loaded
 	*/
 	Croper.prototype._init = function(){
-		this._cacheFuns = Object.create(null);
 		this._checkImageSize();
 
 		this.reset();
@@ -333,12 +340,18 @@
 		cropBox.reset();
 	};
 
+	/*
+	* rotate this viewport image
+	*/
 	Croper.prototype.rotate = function(deg){
 		this.rotateZ = parseFloat(deg);
 
 		this._redraw();
 	};
 
+	/*
+	* scale this viewport image
+	*/
 	Croper.prototype.scale = function(scaleX,scaleY){
 		this.scaleX = Math.min(Math.max(parseFloat(scaleX),0.5),3);
 		this.scaleY = Math.min(Math.max(parseFloat(scaleY),0.5),3);
@@ -347,29 +360,59 @@
 	};
 
 	/*
+	* add event listener on this canvas
+	*/
+	Croper.prototype.on = function(event,handle,isBobble){
+		var canvas = this.canvas,
+			cacheEvents = this._cacheEvents || [];
+
+		cacheEvents.push({
+			type: event,
+			handle: handle,
+			isBobble: !!isBobble
+		});
+		
+		canvas.addEventListener(event,handle,!!isBobble);
+		this._cacheEvents = cacheEvents;
+	};
+
+	/*
+	* remove event listener from this canvas
+	*/
+	Croper.prototype.off = function(event,handle,isBobble){
+		var canvas = this.canvas,
+			cacheEvents = this._cacheEvents,
+			len = cacheEvents.length;
+
+		while(len--){
+			var tempEvent = cacheEvents[len],
+				type = tempEvent.type,
+				curHandle = tempEvent.handle,
+				curIsBobble = tempEvent.isBobble;
+
+			if(
+				(//remove one event listener
+					type == event
+					&& curHandle == handle
+					&& curIsBobble == isBobble
+				)
+				|| !arguments.length//remove all event listener
+			){
+				canvas.removeEventListener(type,curHandle,curIsBobble);
+			}
+		}
+	}
+
+	/*
 	* add event listeners on this canvas
 	*/
 	Croper.prototype._initEvent = function(){
 		var canvas = this.canvas;
 
-		this._cacheFuns.mousedown = this._beginDrag.bind(this);
-		this._cacheFuns.mousemove = this._dragging.bind(this);
-		this._cacheFuns.mouseup = this._endDrag.bind(this);
-
-		canvas.addEventListener('mousedown',this._cacheFuns.mousedown,false);
-		canvas.addEventListener('mousemove',this._cacheFuns.mousemove,false);
-		canvas.addEventListener('mouseup',this._cacheFuns.mouseup,false);
-
-		var tempDiv = document.createElement('div'),
-			mouseWheelEvent = 'onwheel' in tempDiv
-								? 'wheel'
-								: doc.onmousewheel !== undefined
-									? 'mousewheel'
-									: 'DOMMouseScroll';
-		tempDiv = null;
-		this._cacheFuns[mouseWheelEvent] = this._scroll.bind(this);
-		canvas.addEventListener(mouseWheelEvent,this._cacheFuns[mouseWheelEvent],false);
-		mouseWheelEvent = undefined;
+		this.on('mousedown',this._beginDrag.bind(this));
+		this.on('mousemove',this._dragging.bind(this));
+		this.on('mouseup',this._endDrag.bind(this));
+		this.on(MOUSEWHEELEVENT,this._scroll.bind(this));
 	};
 
 	/*
@@ -427,18 +470,16 @@
 	* destroy this cropper object
 	*/
 	Croper.prototype.destroy = function(){
-		this._cropBox.destroy();
+		this._cropBox && this._cropBox.destroy();
 		this._cropBox = null;
 
-		var cacheFuns = this._cacheFuns,
-			keys = Object.keys(cacheFuns);
-		for(var len = keys.length;len--;){
-			var tempEvent = keys[len];
-			this.canvas.removeEventListener(tempEvent,cacheFuns[tempEvent],false);
-		}
-		this._cacheFuns = null;
+		this.off();
+
+		var el = this.el;
+		el && el.removeChild(this.canvas);
+
+		this._cacheEvents = null;
 		this.canvas = null;
-		console.log('destory');
 	};
 
 	/*
