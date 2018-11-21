@@ -51,6 +51,21 @@
 			width: 100%;
 			text-align: center;
 		}
+
+		.reset{
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100px;
+			height: 40px;
+			border-radius: 4px;
+			line-height: 40px;
+			background: green;
+			color: #fff;
+			text-align: center;
+			cursor: pointer;
+			user-select: none;
+		}
 	</style>
 </head>
 <body>
@@ -59,10 +74,6 @@
 	</div>
 	
 	<!-- <input type="file" accept="image/*" id="file"> -->
-
-	<div class="sure">
-		确定
-	</div>
 
 	<div class="preview"></div>
 
@@ -74,25 +85,13 @@
 		function ready(){
 			var ss = jCrop('images/cat.jpg',{
 				el: '#crop',
-				/*cropType: 'circle',*/
+				cropType: 'circle',
 				resizable: true,
 				beforeCreate: function(){
 					console.log('before crop');
 				}
 			});
 			console.log(ss);
-			document.querySelector('.sure').addEventListener('click',function(){
-				var img = new Image();
-				img.src = ss.cut();
-				img.onload = function(){
-					var prev = document.querySelector('.preview');
-					prev.firstElementChild && prev.removeChild(prev.firstElementChild);
-					prev.appendChild(img);
-				}
-				/*var prev = document.querySelector('.preview');
-				prev.appendChild(ss.cut());*/
-			},false);
-			
 
 			/*document.querySelector('#file').addEventListener('change',function(e){
 				var target = e.target,
