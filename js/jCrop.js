@@ -250,7 +250,7 @@
 	/*
 	* 根据容器来设置画布大小，没有则按照图片大小设置
 	*/
-	Croper.prototype._checkCropperSize = function(){
+	Croper.prototype._resetCropperSize = function(){
 		var el = this.el,
 			originWidth = this._imgWidth,
 			originHeight = this._imgHeight;
@@ -282,7 +282,7 @@
 	*/
 	Croper.prototype.reset = function(){
 		//重置画布大小啊
-		this._checkCropperSize();
+		this._resetCropperSize();
 
 		//重置画布放大缩小比例、旋转度数
 		this.scaleX = 1;
@@ -353,7 +353,7 @@
 	};
 
 	/*
-	* 在画布容器中展示画布
+	* 在画布容器中展示画布,初始化画布偏移位置
 	*/
 	Croper.prototype.showCroper = function(){
 		var canvas = this.canvas,
@@ -363,6 +363,11 @@
 			el.removeChild(el.firstElementChild);
 		}
 		el && el.appendChild && el.appendChild(canvas);
+
+		var offsetObj = offset(canvas);
+		this.offsetLeft = offsetObj.left;
+		this.offsetTop = offsetObj.top;
+		offsetObj = null;
 	};
 
 	/*
@@ -522,24 +527,50 @@
 			fingersNum = touches.length,
 			finger;
 
-		if(fingersNum == 1){
+		if(fingersNum == 1){//一个手指，拖拽
 			finger = e.changedTouches[0];
-			var parentOffset = offset(this.canvas);
-			this._dragging({
-				offsetX: finger.clientX - parentOffset.left,
-				offsetY: finger.clientY - parentOffset.top
+			this._beginDrag({
+				offsetX: finger.clientX - this.offsetLeft,
+				offsetY: finger.clientY - this.offsetTop
 			});
-		}else if(fingersNum == 2){
+		}else if(fingersNum == 2){//两个手指，缩放旋转
 			console.log('bb');
 		}
 	};
 
 	Croper.prototype._touchMove = function(e){
 		e.preventDefault();
+		var touches = e.touches,
+			fingersNum = touches.length,
+			finger;
+
+		if(fingersNum == 1){//一个手指，拖拽
+			finger = e.changedTouches[0];
+
+			this._dragging({
+				offsetX: finger.clientX - this.offsetLeft,
+				offsetY: finger.clientY - this.offsetTop
+			});
+		}else if(fingersNum == 2){//两个手指，缩放旋转
+			console.log('cc');
+		}
 	};
 
 	Croper.prototype._touchEnd = function(e){
 		e.preventDefault();
+		var touches = e.touches,
+			fingersNum = touches.length,
+			finger;
+
+		if(fingersNum == 1){//一个手指，拖拽
+			finger = e.changedTouches[0];
+			this._endDrag({
+				offsetX: finger.clientX - this.offsetLeft,
+				offsetY: finger.clientY - this.offsetTop
+			});
+		}else if(fingersNum == 2){//两个手指，缩放旋转
+			console.log('dd');
+		}
 	};
 
 	/*
@@ -628,8 +659,8 @@
 			x = this.x,
 			y = this.y;
 
-		x = Math.min(Math.max(x),croperWidth - width - 1);
-		y = Math.min(Math.max(y),croperHeight - height - 1);
+		this.x = x = Math.min(Math.max(x,0),croperWidth - width - 1);
+		this.y = y = Math.min(Math.max(y,0),croperHeight - height - 1);
 
 		this.drawShadow(x,y);
 		this.drawContent(x,y);
