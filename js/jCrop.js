@@ -1,3 +1,7 @@
+/*!
+ * jCrop.js v1.0.0
+ * (c) 2018-2018 Zoro Yang
+ */
 (function(win,doc){
 	var MOUSECURSORMOVE = 2,
 		MOUSECURSORNWRESIZE = 11,
@@ -20,8 +24,8 @@
 	tempDiv = null;
 
 	/*
-	* class extend by prototype
-	* @params{superClass} Fucntion;The parent class
+	* 原型继承
+	* @params{superClass} Fucntion;父类
 	*/
 	Function.prototype.prototypeExtend = function(superClass){
 		if(superClass.prototype){
@@ -39,8 +43,8 @@
 	};
 
 	/*
-	* check some value is object or not
-	* @params{obj};Inspected object
+	* 是否为对象
+	* @params{obj};被检测对象
 	* @return Boolean;
 	*/
 	function isObject(obj){
@@ -48,9 +52,9 @@
 	}
 
 	/*
-	* merge one or more object to the first object,just like Object.assign
-	* @params{to,...} Object;
-	* return Object;
+	* 浅拷贝合并多个对象到第一个
+	* @params{to,...} Object;参数都是对象类型
+	* @return Object;
 	*/
 	function assign(to){
 		var len = arguments.length;
@@ -75,44 +79,76 @@
 	}
 
 	/*
-	* call hook function
+	* 钩子函数
+	* @params{target} Object;执行对象
+	* @params{hook} String;钩子函数名称
 	*/
 	function callhook(target,hook){
-		var hookFunc = target._opts[hook];
+		var hookFunc = target._opts[hook],
+			args = Array.prototype.slice.call(arguments,2);
 		if(hookFunc && typeof hookFunc === 'function'){
-			hookFunc.call(target);
+			hookFunc.apply(target,args);
 		}
 	}
 
 	/*
-	* computed distance of two points
+	* 计算两点间距离
+	* @params{sx} Number;起点x坐标
+	* @params{sy} Number;起点y坐标
+	* @params{dx} Number;终点x坐标
+	* @params{dy} Number;终点y坐标
 	*/
 	function distanceComputed(sx,sy,dx,dy){
 		return Math.sqrt(Math.pow(dx - sx,2) + Math.pow(dy - sy,2));
 	}
 
 	/*
-	* draw rect by direction
+	* 根据方向绘制矩形，默认顺时针
+	* 原生CanvasRenderingContext2D.rect不能按逆时针方向绘制矩形
 	*
 	* @params {ctx},CanvasRenderingContext2D;
-	* @params {x} Number;The X coordinate
-	* @parmas {y} Number;The Y coordinate
-	* @params {width} Number;The rect width
-	* @params {height} Number;The rect height
-	* @params {direction} Boolean;True will be counterclockwise
+	* @params {x} Number;矩形起点x坐标
+	* @parmas {y} Number;矩形起点y坐标
+	* @params {width} Number;矩形宽度
+	* @params {height} Number;矩形高度
+	* @params {direction} Boolean;True 逆时针，False顺时针
 	*/
 	function rect(ctx,x,y,width,height,direction){
-		if(!!direction){//counterclockwise
+		if(!!direction){//逆时针绘制矩形
 			ctx.moveTo(x,y);
 			ctx.lineTo(x,y + height)
 			ctx.lineTo(x + width,y + height);
 			ctx.lineTo(x + width,y);
-		}else{//clockwise
+		}else{//顺时针，调用原生方法
 			ctx.rect(x,y,width,height);
 		}
 		ctx.closePath();
 	}
 
+	/*
+	* 获取元素相对body偏移量
+	*/
+	function offset(el){
+		var pat = el,
+			top = 0,
+			left = 0;
+
+		while(pat){
+			top += pat.offsetTop;
+			left += pat.offsetLeft;
+			pat = pat.offsetParent;
+		}
+		return {
+			'top': top,
+			'left': left
+		}
+	}
+
+	/*
+	* 克隆画布及画布里绘制内容
+	* @params{oldCanvas} HTMLElement;被克隆的画布元素
+	* @return HTMLElement;返回新的画布元素
+	*/
 	function cloneCanvas(oldCanvas){
 		var newCanvas = document.createElement('canvas'),
 			context = newCanvas.getContext('2d');
@@ -132,24 +168,23 @@
 	var uid = 0;
 
 	/*
-	* The Croper Class
-	* Provide the viewport and handle event as the main function 
+	* 核心类，控制及绘制图片背景，开放接口
 	*/
 	function Croper(srcOrImg,options){
-		assign(this,{
+		assign(this,{//合并参数
 			_maxSize: 2000,
 			quality: 1,
 			type: 'image/png'
 		},this._opts = options);
-
-		callhook(this,'beforeCreate');
 
 		this._loadImg(srcOrImg,this._init);
 		this._uid = ++uid;
 	}
 
 	/*
-	* load img for string or image element
+	* 加载图片
+	* @params{srcOrImg} String | HTMLElement;图片地址或图片元素
+	* @params{callback} Function;图片加载完异步回调
 	*/
 	Croper.prototype._loadImg = function(srcOrImg,callback){
 		var that = this,
@@ -167,7 +202,7 @@
 			var canvas = document.createElement('canvas'),
 				ctx = canvas.getContext('2d');
 			try{
-				ctx.drawImage(this,0,0,0,0);//testing img can be loaded or not
+				ctx.drawImage(this,0,0,0,0);//检查图片是否能被加载
 				canvas = ctx = null;
 
 				that._img = this;
@@ -185,7 +220,7 @@
 	};
 
 	/*
-	* init the canvas and draw back img,crop box when the img has been loaded
+	* 初始化图片大小，监测是否超出最大尺寸，重置图片背景和裁剪框
 	*/
 	Croper.prototype._init = function(){
 		this._checkImageSize();
@@ -196,9 +231,7 @@
 	};
 
 	/*
-	* compress the img proportionally while it width or height longer than the maxSize
-	*
-	* canvas cannot load img which width or height longer than maxSize by setted
+	* 限制图片最大宽度或高度，超出则等比缩小
 	*/
 	Croper.prototype._checkImageSize = function(){
 		var img = this._img,
@@ -207,7 +240,7 @@
 			maxSize = this._maxSize,
 			max = Math.max(imgWidth,imgHeight);
 
-		if(max > maxSize){
+		if(max > maxSize){//超出最大尺寸限制
 			var ratio = maxSize / max;
 			img.width = this._imgWidth = imgWidth * ratio;
 			img.height = this._imgHeight = imgHeight * ratio;
@@ -215,7 +248,7 @@
 	};
 
 	/*
-	* Init the viewport size by the view element if provided, or the img img size
+	* 根据容器来设置画布大小，没有则按照图片大小设置
 	*/
 	Croper.prototype._checkCropperSize = function(){
 		var el = this.el,
@@ -236,7 +269,7 @@
 			var clientWidth = el.clientWidth,
 				clientHeight = el.clientHeight,
 				minRatio = Math.max(originWidth / clientWidth,originHeight / clientHeight);
-			if(minRatio > 1){//compress the img proportionally while the img bigger than the view
+			if(minRatio > 1){//等比缩小图片大小如果图片大小超出容器大小，然后设置画布大小
 				this.clientWidth = this._img.width = originWidth / minRatio;
 				this.clientHeight = this._img.height = originHeight / minRatio;
 			}
@@ -244,33 +277,52 @@
 
 	};
 
+	/*
+	* 重置画布大小、放大缩小比例、旋转度数并重绘
+	*/
 	Croper.prototype.reset = function(){
-		this._checkCropperSize();//reset viewport box size
+		//重置画布大小啊
+		this._checkCropperSize();
 
-		//reset transform status
+		//重置画布放大缩小比例、旋转度数
 		this.scaleX = 1;
 		this.scaleY = 1;
 		this.rotateZ = 0;
 
+		//重新装载画布及裁剪框
 		this._installViewport();
 
+		//初始化事件绑定
+		this._initEvent();
+
+		//重绘画布及裁剪框
 		this._redraw();
 		this.showCroper();
+
+		callhook(this,'created',this.canvas,this.clientWidth,this.clientHeight);
 	};
 
+	/*
+	* 装载画布及裁剪框
+	*/
 	Croper.prototype._installViewport = function(){
+		//如果存在旧的画布，则解除旧的画布的绑定事件
+		this.off();
 		var width = this.clientWidth,
 			height = this.clientHeight,
-			canvas = this.canvas = doc.createElement('canvas');
+			canvas = this.canvas = doc.createElement('canvas');//生成新的画布
 
 		canvas.innerHTML = '浏览器不支持canvas';
 		canvas.width = width;
 		canvas.height = height;
 
+		//装载裁剪框及重置
 		this._installCropBox(this.cropType);
-		this._initEvent();
 	};
 
+	/*
+	* 在画布上重绘背景图、裁剪框
+	*/
 	Croper.prototype._redraw = function(){
 		var canvas = this.canvas,
 			width = this.clientWidth,
@@ -293,13 +345,15 @@
 
 		ctx.restore();
 
+		//备份当前状态的背景图画布
 		this._beikCanvas = cloneCanvas(canvas);
 
+		//裁剪框重绘
 		this._cropBox && this._cropBox._redraw();
 	};
 
 	/*
-	* append this viewport to the view provided
+	* 在画布容器中展示画布
 	*/
 	Croper.prototype.showCroper = function(){
 		var canvas = this.canvas,
@@ -312,7 +366,7 @@
 	};
 
 	/*
-	* draw the crop box
+	* 装载裁剪框并重绘
 	*/
 	Croper.prototype._installCropBox = function(cropType){
 		var cropBox = this._cropBox;
@@ -322,26 +376,28 @@
 				canvas: this.canvas,
 				croperWidth: this.clientWidth,
 				croperHeight: this.clientHeight,
-				type: this.type,
-				quality: this.quality,
-				resizable: this.resizable
+				type: this.type,//图片类型
+				quality: this.quality,//图片质量
+				resizable: this.resizable//裁剪框是否可拉伸变形
 			});
 		switch(cropType){
-			case 'circle'://draw the cricle crop box
+			case 'circle'://圆形裁剪框
 				cropBox = new CircleCropBox(cropBoxOpts);
 				break;
-			default://draw the rect crop box
+			default://矩形裁剪框
 				cropBox = new CropBox(cropBoxOpts);
 		}
 
 		this._cropBox = cropBox;
 		cropBox._parent = this;
 
+		//裁剪框重置
 		cropBox.reset();
 	};
 
 	/*
-	* rotate this viewport image
+	* 旋转画布，即旋转背景图
+	* @params{deg} Number;旋转度数，正数顺时针，负数逆时针
 	*/
 	Croper.prototype.rotate = function(deg){
 		this.rotateZ = parseFloat(deg);
@@ -350,7 +406,9 @@
 	};
 
 	/*
-	* scale this viewport image
+	* 缩放画布，即缩放背景图,最小不能缩小到原来的0.5，最大不能放大到原来的3倍
+	* @params{scaleX} Number;水平方向缩放
+	* @params{scaleY} Number;垂直方向缩放
 	*/
 	Croper.prototype.scale = function(scaleX,scaleY){
 		this.scaleX = Math.min(Math.max(parseFloat(scaleX),0.5),3);
@@ -360,7 +418,10 @@
 	};
 
 	/*
-	* add event listener on this canvas
+	* 当前画布事件绑定
+	* @params{event} String;事件类型
+	* @params{handle} Function;事件操作方法
+	* @params{isBobble} Boolean;是否冒泡
 	*/
 	Croper.prototype.on = function(event,handle,isBobble){
 		var canvas = this.canvas,
@@ -377,11 +438,17 @@
 	};
 
 	/*
-	* remove event listener from this canvas
+	* 移除指定绑定事件，如果参数为0则移除所有绑定事件
+	* @params{event} String;要移除的事件类型
+	* @params{handle} Function;要移除的事件方法
+	* @params{isBobble} Boolean;是否冒泡
 	*/
 	Croper.prototype.off = function(event,handle,isBobble){
-		var canvas = this.canvas,
-			cacheEvents = this._cacheEvents,
+		var canvas = this.canvas;
+
+		if(!canvas){return ; } 
+
+		var cacheEvents = this._cacheEvents,
 			len = cacheEvents.length;
 
 		while(len--){
@@ -401,10 +468,11 @@
 				canvas.removeEventListener(type,curHandle,curIsBobble);
 			}
 		}
+		!arguments.length && (cacheEvents = []);
 	}
 
 	/*
-	* add event listeners on this canvas
+	* 初始化当前画布绑定事件
 	*/
 	Croper.prototype._initEvent = function(){
 		var canvas = this.canvas;
@@ -413,10 +481,13 @@
 		this.on('mousemove',this._dragging.bind(this));
 		this.on('mouseup',this._endDrag.bind(this));
 		this.on(MOUSEWHEELEVENT,this._scroll.bind(this));
+		this.on('touchstart',this._touchStart.bind(this),false);
+		this.on('touchmove',this._touchMove.bind(this),false);
+		this.on('touchend',this._touchEnd.bind(this),false);
 	};
 
 	/*
-	* before drag 
+	* 鼠标点击事件
 	*/
 	Croper.prototype._beginDrag = function(e){
 		var cropBox = this._cropBox;
@@ -425,7 +496,7 @@
 	};
 
 	/*
-	* dragging
+	* 鼠标移动事件
 	*/
 	Croper.prototype._dragging = function(e){
 		var cropBox = this._cropBox;
@@ -434,7 +505,7 @@
 	};
 
 	/*
-	* after dragging
+	* 鼠标松开事件
 	*/
 	Croper.prototype._endDrag = function(e){
 		var cropBox = this._cropBox;
@@ -442,6 +513,38 @@
 		cropBox.endDrag && cropBox.endDrag.call(cropBox,e.offsetX,e.offsetY);
 	};
 
+	/*
+	* 屏幕touch start事件
+	*/
+	Croper.prototype._touchStart = function(e){
+		e.preventDefault();
+		var touches = e.touches,
+			fingersNum = touches.length,
+			finger;
+
+		if(fingersNum == 1){
+			finger = e.changedTouches[0];
+			var parentOffset = offset(this.canvas);
+			this._dragging({
+				offsetX: finger.clientX - parentOffset.left,
+				offsetY: finger.clientY - parentOffset.top
+			});
+		}else if(fingersNum == 2){
+			console.log('bb');
+		}
+	};
+
+	Croper.prototype._touchMove = function(e){
+		e.preventDefault();
+	};
+
+	Croper.prototype._touchEnd = function(e){
+		e.preventDefault();
+	};
+
+	/*
+	* 鼠标滚轮事件
+	*/
 	Croper.prototype._scroll = function(e){
 		var type = e.type,
 			wheelDelta = e.wheelDelta
@@ -459,7 +562,7 @@
 	};
 
 	/*
-	* cut the crop box selectd area and return it as img base64
+	* 裁剪结果，返回base64图片
 	* @return String {base64}
 	*/
 	Croper.prototype.cut = function(){
@@ -467,24 +570,24 @@
 	};
 
 	/*
-	* destroy this cropper object
+	* 销毁
 	*/
 	Croper.prototype.destroy = function(){
-		this._cropBox && this._cropBox.destroy();
+		this._cropBox && this._cropBox.destroy();//销毁裁剪框
 		this._cropBox = null;
 
-		this.off();
+		this.off();//注销绑定事件
 
 		var el = this.el;
-		el && el.removeChild(this.canvas);
+		el && el.removeChild(this.canvas);//清除
 
 		this._cacheEvents = null;
 		this.canvas = null;
 	};
 
 	/*
-	* The crop box Class
-	* draw the select shape,drag to select area,and cut it
+	* 矩形裁剪框类
+	* 绘制矩形裁剪框，实现拖拽、裁剪功能
 	*/
 	function CropBox(options){
 		assign(this,{
@@ -498,7 +601,7 @@
 	}
 
 	/*
-	* reset width,height,x and y for the cropbox
+	* 重置矩形裁剪框大小，位置居中
 	*/
 	CropBox.prototype.reset = function(){
 		var croperWidth = this.croperWidth,
@@ -508,12 +611,15 @@
 			cropBoxHeight = this.cropBoxHeight,
 			width,height;
 
-		this.width = width = cropBoxWidth ? cropBoxWidth : minimumLength / 2;
-		this.height = height = cropBoxHeight ? cropBoxHeight : minimumLength / 2;
+		this.width = width = Math.min(cropBoxWidth ? cropBoxWidth : minimumLength / 2,croperWidth);
+		this.height = height = Math.min(cropBoxHeight ? cropBoxHeight : minimumLength / 2,croperHeight);
 		this.x = (croperWidth - width) / 2;
 		this.y = (croperHeight - height) / 2;
 	};
 
+	/*
+	* 矩形裁剪框重绘
+	*/
 	CropBox.prototype._redraw = function(){
 		var croperWidth = this.croperWidth,
 			croperHeight = this.croperHeight,
@@ -530,6 +636,9 @@
 		this._updateProperty();
 	};
 
+	/*
+	* 绘制矩形裁剪框之外的阴影
+	*/
 	CropBox.prototype.drawShadow = function(x,y){
 		var canvas = this.canvas,
 			ctx = canvas.getContext('2d'),
@@ -550,6 +659,9 @@
 		ctx.restore();
 	}
 
+	/*
+	* 绘制矩形裁剪框内容
+	*/
 	CropBox.prototype.drawContent = function(x,y){
 		var canvas = this.canvas,
 			ctx = canvas.getContext('2d'),
@@ -557,13 +669,18 @@
 			height = this.height,
 			lineStyle = this.lineStyle;
 
+		//绘制矩形裁剪框
 		drawGrid(ctx,x,y,width,height,lineStyle,this.dashLineStyle);
+		//绘制拉伸点在裁剪框边线中间部分
 		this.resizable && addDotsOnGrid(ctx,x,y,width,height,Math.max(this.dotSize,1),this.resizeDotStyle);
 	};
 
+	/*
+	* 绘制矩形裁剪框及中间虚线
+	*/
 	function drawGrid(ctx,x,y,width,height,lineStyle,dashLineStyle){
 		/*
-		* canvas has bugs on draw 1px line,fixed it by covert coordinate
+		* 画布在绘制1px线的时候的bug，需要转换坐标
 		* @example 
 		*  (10,20) => (10.5,20.5)
 		*  (10.3,20.7) => (10.5,20.5)
@@ -578,15 +695,12 @@
 			covertNumToHalf(y),
 			width,
 			height
-		);//Draw the crop box grid
+		);//绘制矩形边框
 		ctx.stroke();
 
 		ctx.restore();
 
-		/*
-		* Draw two dashes in each of the horizontal and vertical directions
-		*/
-		drawDashLine(
+		drawDashLine(//垂直虚线左三分之一处
 			ctx,
 			covertNumToHalf(x + width / 3),
 			covertNumToHalf(y),
@@ -594,7 +708,7 @@
 			covertNumToHalf(y + height),
 			dashLineStyle
 		);
-		drawDashLine(
+		drawDashLine(//垂直虚线右三分之一处
 			ctx,
 			covertNumToHalf(x + (width / 3) * 2),
 			covertNumToHalf(y),
@@ -602,7 +716,7 @@
 			covertNumToHalf(y + height),
 			dashLineStyle
 		);
-		drawDashLine(
+		drawDashLine(//水平虚线上三分之一处
 			ctx,
 			covertNumToHalf(x),
 			covertNumToHalf(y + height / 3),
@@ -610,7 +724,7 @@
 			covertNumToHalf(y + height / 3),
 			dashLineStyle
 		);
-		drawDashLine(
+		drawDashLine(//水平虚线下三分之一处
 			ctx,
 			covertNumToHalf(x),
 			covertNumToHalf(y + (height / 3) * 2),
@@ -618,9 +732,18 @@
 			covertNumToHalf(y + (height / 3) * 2),
 			dashLineStyle
 		);
-		/*end of draw dashes*/
 	}
 
+	/*
+	* 绘制虚线
+	* @params{ctx} CanvasRenderingContext2D;
+	* @params{sx} Number;起点x坐标
+	* @params{sy} Number;起点y坐标
+	* @params{dx} Number;终点x坐标
+	* @params{dy} Number;终点y坐标
+	* @params{strokeStyle} String;线条颜色
+	* @params{dashLength} Number;虚线长度,默认为 3
+	*/
 	function drawDashLine(ctx,sx,sy,dx,dy,strokeStyle,dashLength){
 		dashLength = dashLength || 3;
 
@@ -644,14 +767,17 @@
 		ctx.restore();
 	}
 
+	/*
+	* 数值转换，向下取整加0.5
+	* @params{num} Number;
+	* @return Number;
+	*/
 	function covertNumToHalf(num){
-		num = Number(num);
-
 		return parseInt(num) + 0.5;
 	}
 
 	/*
-	* draw dots on the grid for resize it
+	* 绘制拉伸点在矩形裁剪框
 	*/
 	function addDotsOnGrid(ctx,x,y,width,height,dotSize,resizeDotStyle){
 		dotSize = dotSize || 5;
@@ -675,7 +801,7 @@
 	}
 
 	/*
-	* draw rect by x,y,width,height and fill it
+	* 绘制并填充矩形
 	*/
 	function drawFillRect(ctx,x,y,size){
 		ctx.beginPath();
@@ -683,6 +809,9 @@
 		ctx.fill();
 	}
 
+	/*
+	* 更新属性至Croper对象
+	*/
 	CropBox.prototype._updateProperty = function(){
 		var parent = this._parent,
 			child = this;
@@ -695,11 +824,18 @@
 		});
 	}
 
+	/*
+	* 拖拽之前，判断拖拽类型并保存
+	*/
 	CropBox.prototype.beforeDrag = function(x,y){
 		this._distanceX = x - this.x;
 		this._distanceY = y - this.y;
 		this._hoverStatus = this.mouseWheelPositioning(x,y);
 	};
+
+	/*
+	* 根据拖拽类型拖拽
+	*/
 	CropBox.prototype.dragging = function(x,y){
 		var canvas = this.canvas,
 			startX = this.x,
@@ -764,6 +900,9 @@
 		this._parent._redraw();
 	};
 
+	/*
+	* 结束拖拽
+	*/
 	CropBox.prototype.endDrag = function(x,y){
 		this._hoverStatus = null;
 		this.mouseWheelPositioning(x,y);
@@ -776,6 +915,9 @@
 		};
 	};
 
+	/*
+	* 判断鼠标形状
+	*/
 	CropBox.prototype.mouseWheelPositioning = function(x,y){
 		var canvas = this.canvas,
 			startX = this.x,
@@ -855,6 +997,9 @@
 
 	};
 
+	/*
+	* 生成裁剪结果
+	*/
 	CropBox.prototype.cut = function(){
 		var x = this.x,
 			y = this.y,
@@ -877,15 +1022,24 @@
 		return resCanvas.toDataURL(this.type,this.quality);
 	};
 
+	/*
+	* 销毁裁剪框
+	*/
 	CropBox.prototype.destroy = function(){
 		this.canvas = this._parent = null;
 	};
 
+	/*
+	* 圆形裁剪框
+	*/
 	function CircleCropBox(options){
 		CropBox.call(this,options);
 	}
 	CircleCropBox.prototypeExtend(CropBox);
 
+	/*
+	* 重置圆形裁剪框半径和位置
+	*/
 	CircleCropBox.prototype.reset = function(){
 		var croperWidth = this.croperWidth,
 			croperHeight = this.croperHeight,
@@ -900,6 +1054,9 @@
 
 	};
 
+	/*
+	* 圆形裁剪框重绘
+	*/
 	CircleCropBox.prototype._redraw = function(){
 		var croperWidth = this.croperWidth,
 			croperHeight = this.croperHeight,
@@ -915,6 +1072,9 @@
 		this._updateProperty();
 	};
 
+	/*
+	* 更新属性至Croper对象
+	*/
 	CircleCropBox.prototype._updateProperty = function(){
 		var parent = this._parent,
 			child = this;
@@ -926,6 +1086,9 @@
 		});
 	}
 
+	/*
+	* 绘制圆形裁剪框之外的阴影
+	*/
 	CircleCropBox.prototype.drawShadow = function(x,y){
 		var canvas = this.canvas,
 			ctx = canvas.getContext('2d'),
@@ -940,22 +1103,31 @@
 		ctx.fill();
 	};
 
+	/*
+	* 绘制圆形裁剪框内容
+	*/
 	CircleCropBox.prototype.drawContent = function(x,y){
 		var canvas = this.canvas,
 			ctx = canvas.getContext('2d'),
 			radius = this.radius,
 			lineStyle = this.lineStyle;
 
+		//绘制圆形裁剪框边框
 		drawCircleBox(ctx,x,y,radius,lineStyle,this.dashLineStyle);
+		//绘制拉伸点在边线中间
 		this.resizable && addDotsOnCircle(ctx,x,y,radius,Math.max(this.dotSize,1),this.resizeDotStyle);
 	};
 
+	/*
+	* 绘制圆形裁剪框
+	*/
 	function drawCircleBox(ctx,x,y,radius,lineStyle,dashLineStyle){
 		ctx.beginPath();
 		ctx.strokeStyle = lineStyle;
-		ctx.arc(x + radius,y + radius,radius,0,DOUBLEPI);
+		ctx.arc(x + radius,y + radius,radius,0,DOUBLEPI);//圆形裁剪框边框
 		ctx.stroke();
 
+		//中间绘制垂直虚线
 		drawDashLine(
 			ctx,
 			covertNumToHalf(x + radius),
@@ -965,6 +1137,7 @@
 			dashLineStyle
 		);
 
+		//中间绘制水平虚线
 		drawDashLine(
 			ctx,
 			covertNumToHalf(x),
@@ -975,16 +1148,22 @@
 		);
 	}
 
+	/*
+	* 绘制拖拽点在圆形裁剪框周边中点
+	*/
 	function addDotsOnCircle(ctx,x,y,radius,dotSize,resizeDotStyle){
 		ctx.fillStyle = resizeDotStyle;
 		dotSize = dotSize || 5;
 
-		drawFillRect(ctx,x + radius,y,dotSize);
-		drawFillRect(ctx,x + 2 * radius,y + radius,dotSize);
-		drawFillRect(ctx,x + radius,y + 2 * radius,dotSize);
-		drawFillRect(ctx,x,y + radius,dotSize);
+		drawFillRect(ctx,x + radius,y,dotSize);//center top
+		drawFillRect(ctx,x + 2 * radius,y + radius,dotSize);//right center
+		drawFillRect(ctx,x + radius,y + 2 * radius,dotSize);//center bottom
+		drawFillRect(ctx,x,y + radius,dotSize);//left center
 	}
 
+	/*
+	* 判断鼠标位置及拖拽状态
+	*/
 	CircleCropBox.prototype.mouseWheelPositioning = function(x,y){
 		var canvas = this.canvas,
 			startX = this.x,
@@ -1000,7 +1179,7 @@
 				&& x <= startX + dotSize / 2
 				&& y >= startY + radius - dotSize / 2
 				&& y <= startY + radius + dotSize / 2
-			){
+			){//left center
 				canvas.style.cursor = 'w-resize';
 				return MOUSECURSORWRESIZE;
 			}
@@ -1010,7 +1189,7 @@
 				&& x <= startX + radius + dotSize / 2
 				&& y >= startY - dotSize / 2
 				&& y <= startY + dotSize / 2
-			){
+			){//center top
 				canvas.style.cursor = 'n-resize';
 				return MOUSECURSORNRESIZE;
 			}
@@ -1020,7 +1199,7 @@
 				&& x <= startX + radius + dotSize / 2
 				&& y >= startY + 2 * radius - dotSize / 2
 				&& y <= startY + 2 * radius + dotSize / 2
-			){
+			){//center bottom
 				canvas.style.cursor = 's-resize';
 				return MOUSECURSORSRESIZE;
 			}
@@ -1030,14 +1209,14 @@
 				&& x <= startX + 2 * radius + dotSize / 2
 				&& y >= startY + radius - dotSize / 2
 				&& y <= startY + radius + dotSize / 2
-			){
+			){//right bottom
 				canvas.style.cursor = 'e-resize';
 				return MOUSECURSORERESIZE;
 			}
 
 		}
 
-		//move center from left top to center
+		//当前点移至圆形中间判断位置
 		startX += radius;
 		startY += radius;
 		if(distanceComputed(startX,startY,x,y) > radius){
@@ -1050,6 +1229,9 @@
 
 	};
 
+	/*
+	* 拖拽圆形裁剪框
+	*/
 	CircleCropBox.prototype.dragging = function(x,y){
 		var canvas = this.canvas,
 			startX = this.x,
@@ -1090,6 +1272,9 @@
 		this._parent._redraw();
 	};
 
+	/*
+	* 保存裁剪结果
+	*/
 	CircleCropBox.prototype.cut = function(){
 		var x = this.x,
 			y = this.y,
@@ -1111,6 +1296,7 @@
 		resCtx.clip();
 		resCtx.drawImage(beikCanvas,x,y,diameter,diameter,0,0,diameter,diameter);
 
+		//圆形裁剪结果必须是png格式图片
 		return resCanvas.toDataURL('image/png',this.quality);
 	};
 

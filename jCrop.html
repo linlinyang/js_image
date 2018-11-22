@@ -24,7 +24,7 @@
 	    .clearfix { *zoom:1; }
 
 		.model{
-			width: 100%;
+			width: 1000px;
 			height: 600px;
 			background: rgba(0,0,0,0.5);
 			z-index: 9999;
@@ -85,11 +85,9 @@
 		function ready(){
 			var ss = jCrop('images/cat.jpg',{
 				el: '#crop',
-				cropType: 'circle',
+				/*cropType: 'circle',*/
 				resizable: true,
-				beforeCreate: function(){
-					console.log('before crop');
-				}
+				created: function(canvas,width,height){				}
 			});
 			
 			
