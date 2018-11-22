@@ -102,6 +102,10 @@
 		return Math.sqrt(Math.pow(dx - sx,2) + Math.pow(dy - sy,2));
 	}
 
+	function getAngle(sx,sy,dx,dy){
+		return Math.atan(dy - sy / dx - sx);
+	}
+
 	/*
 	* 根据方向绘制矩形，默认顺时针
 	* 原生CanvasRenderingContext2D.rect不能按逆时针方向绘制矩形
@@ -524,52 +528,81 @@
 	Croper.prototype._touchStart = function(e){
 		e.preventDefault();
 		var touches = e.touches,
-			fingersNum = touches.length,
-			finger;
+			fingersNum = touches.length;
 
 		if(fingersNum == 1){//一个手指，拖拽
-			finger = e.changedTouches[0];
+			var finger = e.changedTouches[0];
 			this._beginDrag({
 				offsetX: finger.clientX - this.offsetLeft,
 				offsetY: finger.clientY - this.offsetTop
 			});
 		}else if(fingersNum == 2){//两个手指，缩放旋转
-			console.log('bb');
+			this._startTouches = touches;
 		}
 	};
 
 	Croper.prototype._touchMove = function(e){
 		e.preventDefault();
 		var touches = e.touches,
-			fingersNum = touches.length,
-			finger;
+			fingersNum = touches.length;
 
 		if(fingersNum == 1){//一个手指，拖拽
-			finger = e.changedTouches[0];
+			var finger = e.changedTouches[0];
 
 			this._dragging({
 				offsetX: finger.clientX - this.offsetLeft,
 				offsetY: finger.clientY - this.offsetTop
 			});
 		}else if(fingersNum == 2){//两个手指，缩放旋转
-			console.log('cc');
+			var startTouches = this._startTouches,
+				scale = distanceComputed(
+						startTouches[0].clientX,
+						startTouches[0].clientY,
+						startTouches[1].clientX,
+						startTouches[1].clientY
+					) / distanceComputed(
+						touches[0].clientX,
+						touches[0].clientY,
+						touches[1].clientX,
+						touches[1].clientY
+					),
+				rotation = getAngle(
+						startTouches[0].clientX,
+						startTouches[0].clientY,
+						startTouches[1].clientX,
+						startTouches[1].clientY
+					) - getAngle(
+						touches[0].clientX,
+						touches[0].clientY,
+						touches[1].clientX,
+						touches[1].clientY
+					);
+			if(scale > 1){
+				this.scaleX = Math.min(3,this.scaleX + 0.1);
+				this.scaleY = Math.min(3,this.scaleY + 0.1);
+			}else if(scale < 1){
+				this.scaleX = Math.max(0.5,this.scaleX + 0.1);
+				this.scaleY = Math.max(0.5,this.scaleY + 0.1);
+			}
+			this.rotateZ = rotation;;
+
+			this._redraw();
 		}
 	};
 
 	Croper.prototype._touchEnd = function(e){
 		e.preventDefault();
 		var touches = e.touches,
-			fingersNum = touches.length,
-			finger;
+			fingersNum = touches.length;
 
 		if(fingersNum == 1){//一个手指，拖拽
-			finger = e.changedTouches[0];
+			var finger = e.changedTouches[0];
 			this._endDrag({
 				offsetX: finger.clientX - this.offsetLeft,
 				offsetY: finger.clientY - this.offsetTop
 			});
 		}else if(fingersNum == 2){//两个手指，缩放旋转
-			console.log('dd');
+			this._startTouches = null;
 		}
 	};
 
