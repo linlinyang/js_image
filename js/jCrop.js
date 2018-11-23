@@ -102,7 +102,7 @@
 		return Math.sqrt(Math.pow(dx - sx,2) + Math.pow(dy - sy,2));
 	}
 
-	function getAngle(sx,sy,dx,dy){
+	function angleComputed(sx,sy,dx,dy){
 		return Math.atan(dy - sy / dx - sx);
 	}
 
@@ -541,6 +541,9 @@
 		}
 	};
 
+	/*
+	* 屏幕touch move事件
+	*/
 	Croper.prototype._touchMove = function(e){
 		e.preventDefault();
 		var touches = e.touches,
@@ -566,17 +569,18 @@
 						touches[1].clientX,
 						touches[1].clientY
 					),
-				rotation = getAngle(
+				rotation = angleComputed(
 						startTouches[0].clientX,
 						startTouches[0].clientY,
 						startTouches[1].clientX,
 						startTouches[1].clientY
-					) - getAngle(
+					) - angleComputed(
 						touches[0].clientX,
 						touches[0].clientY,
 						touches[1].clientX,
 						touches[1].clientY
 					);
+			//双指拉开放大背景图，拉近缩小背景图
 			if(scale > 1){
 				this.scaleX = Math.min(3,this.scaleX + 0.1);
 				this.scaleY = Math.min(3,this.scaleY + 0.1);
@@ -584,12 +588,16 @@
 				this.scaleX = Math.max(0.5,this.scaleX + 0.1);
 				this.scaleY = Math.max(0.5,this.scaleY + 0.1);
 			}
-			this.rotateZ = rotation;;
+			//双指旋转控制背景图
+			this.rotateZ += rotation * 180 / Math.PI;
 
 			this._redraw();
 		}
 	};
 
+	/*
+	* 屏幕touch end事件
+	*/
 	Croper.prototype._touchEnd = function(e){
 		e.preventDefault();
 		var touches = e.touches,
@@ -1097,7 +1105,7 @@
 	* 圆形裁剪框
 	*/
 	function CircleCropBox(options){
-		CropBox.call(this,options);
+		CropBox.call(this,options);//属性继承
 	}
 	CircleCropBox.prototypeExtend(CropBox);
 

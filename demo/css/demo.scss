@@ -1,0 +1,71 @@
+@mixin size($width,$height){
+	width: $width;
+	height: $height;
+}
+@mixin wAlign(
+	$width,
+	$top: 0,
+	$bottom: 0
+){
+	width: $width;
+	margin: $top auto $bottom;
+}
+@mixin pos(
+	$top,
+	$left,
+	$position: absolute,
+	$right: null,
+	$bottom: null
+){
+	position: $position;
+	@if($top){
+		top: $top;
+	}
+	@if($left){
+		left: $left;
+	}
+	@if($right){
+		right: $right;
+	}
+	@if($bottom){
+		bottom: $bottom;
+	}
+}
+
+body,html{
+	@include size(100%,100%);
+}
+
+.file-select{
+	height: 100%;
+	max-width: 600px;
+	max-height: 600px;
+	border: 1px solid #ccc;
+	@include wAlign(100%,10%);
+	position: relative;
+	overflow: hidden;
+	cursor: pointer;
+	z-index: 1;
+
+	input{
+		display: block;
+		@include size(100%,100%);
+		opacity: 0;
+		cursor: pointer;
+	}
+
+	&:before{
+		@include pos(50%,10%);
+		@include size(80%,0);
+		border-bottom: 1px solid #ccc;
+		margin-top: -0.5px;
+		content: '';
+	}
+	&:after{
+		@include pos(10%,50%);
+		@include size(0,80%);
+		border-left: 1px solid #ccc;
+		margin-left: -0.5px;
+		content: '';
+	}
+}
