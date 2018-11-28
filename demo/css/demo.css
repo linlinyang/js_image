@@ -3,11 +3,10 @@ body, html {
   height: 100%; }
 
 .file-select {
-  height: 100%;
-  max-width: 600px;
-  max-height: 600px;
+  height: 0;
+  padding-bottom: 60%;
   border: 1px solid #ccc;
-  width: 100%;
+  width: 60%;
   margin: 10% auto 0;
   position: relative;
   overflow: hidden;
