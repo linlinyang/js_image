@@ -33,5 +33,29 @@
 		<input type="file" name="imgcut" accept="image/jpeg,image/jpg,image/png">
 	</div>
 
+	<script type="text/javascript">
+		
+		window.addEventListener('DOMContentLoaded',ready,false);
+
+		function ready(){
+
+			document.querySelector('.file-select input').addEventListener('change',fileSelect,false);
+
+		}
+
+		function fileSelect(e){
+			var file = e.target;
+
+			console.log(file.files);
+		}
+
+		function logout(){
+			window.removeEventListener('DOMContentLoaded',ready,false);
+			document.querySelector('.file-select input').removeEventListener('change',fileSelect,false);
+		}
+		window.addEventListener('unload',logout,false);
+
+	</script>
+
 </body>
 </html>
