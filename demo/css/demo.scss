@@ -31,16 +31,37 @@
 		bottom: $bottom;
 	}
 }
+@mixin fcw(
+	$size: null,
+	$color: null,
+	$weight: null
+){
+	@if($size){
+		font-size: $size;
+	}
+	@if($color){
+		color: $color
+	}
+	@if($weight){
+		font-weight: $weight;
+	}
+}
 
 body,html{
 	@include size(100%,100%);
+}
+
+.tips{
+	text-align: center;
+	@include fcw(1.2em,red);
+	margin-top: 20px;
 }
 
 .file-select{
 	height: 0;
 	padding-bottom: 60%;
 	border: 1px solid #ccc;
-	@include wAlign(60%,10%);
+	@include wAlign(60%,6%);
 	position: relative;
 	overflow: hidden;
 	cursor: pointer;

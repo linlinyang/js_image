@@ -29,6 +29,10 @@
 </head>
 <body>
 	
+	<div class="tips">
+		<span>裁剪框使用的是canvas，所以浏览器兼容到IE9+</span>
+	</div>
+
 	<div class="file-select">
 		<input type="file" name="imgcut" accept="image/jpeg,image/jpg,image/png">
 	</div>
@@ -44,9 +48,37 @@
 		}
 
 		function fileSelect(e){
-			var file = e.target;
+			var file = e.target,
+				filePath = file.value,
+				ext = filePath.substr(filePath.lastIndexOf('.') + 1).toLowerCase(),
+				types = ['jpg','jpeg','png'];
 
-			console.log(file.files);
+			if(types.indexOf(ext) == -1){
+				alert('图片格式错误');
+				return ;
+			}
+
+			if(window.FileReader){//File Reader
+				var reader = new FileReader();
+				reader.onload = function(){
+					preview(this.result);
+				};
+				reader.readAsDataURL(file.files[0]);
+			}else if(document.all){//IE9
+				file.select();
+				file.blur();
+				var reallocalpath = document.selection.createRange().text,
+					img = new Image();
+
+				img.style.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod='image',src=\"" + reallocalpath + "\")";
+				img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+
+				preview(img);
+			}
+		}
+
+		function preview(imgOrSrc){
+
 		}
 
 		function logout(){
