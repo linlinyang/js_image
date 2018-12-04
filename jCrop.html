@@ -83,11 +83,19 @@
 		window.addEventListener('DOMContentLoaded',ready,false);
 
 		function ready(){
+			var model = document.querySelector('#crop'),
+				width = model.clientWidth,
+				height = model.clientHeight
 			var ss = jCrop('images/cat.jpg',{
 				el: '#crop',
-				/*cropType: 'circle',*/
+				width: width,
+				height: height,
 				resizable: true,
-				created: function(canvas,width,height){				}
+				cropWidth: 300,
+				cropHeight: 300,
+				created: function(canvas,width,height){
+					model.appendChild(canvas);
+				}
 			});
 			
 			

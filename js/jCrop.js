@@ -130,25 +130,6 @@
 	}
 
 	/*
-	* 获取元素相对body偏移量
-	*/
-	function offset(el){
-		var pat = el,
-			top = 0,
-			left = 0;
-
-		while(pat){
-			top += pat.offsetTop;
-			left += pat.offsetLeft;
-			pat = pat.offsetParent;
-		}
-		return {
-			'top': top,
-			'left': left
-		}
-	}
-
-	/*
 	* 克隆画布及画布里绘制内容
 	* @params{oldCanvas} HTMLElement;被克隆的画布元素
 	* @return HTMLElement;返回新的画布元素
@@ -262,13 +243,6 @@
 		this.clientWidth = originWidth;
 		this.clientHeight = originHeight;
 
-		if(typeof el === 'string'){
-			try{
-				this.el = el = doc.querySelector(el);
-			}catch(e){
-				throw e;
-			}
-		}
 		if(el && el.clientWidth){
 			var clientWidth = el.clientWidth,
 				clientHeight = el.clientHeight,
@@ -352,24 +326,6 @@
 
 		//裁剪框重绘
 		this._cropBox && this._cropBox._redraw();
-	};
-
-	/*
-	* 在画布容器中展示画布,初始化画布偏移位置
-	*/
-	Croper.prototype.showCroper = function(){
-		var canvas = this.canvas,
-			el = this.el;
-
-		if(el && el.firstElementChild){
-			el.removeChild(el.firstElementChild);
-		}
-		el && el.appendChild && el.appendChild(canvas);
-
-		var offsetObj = offset(canvas);
-		this.offsetLeft = offsetObj.left;
-		this.offsetTop = offsetObj.top;
-		offsetObj = null;
 	};
 
 	/*

@@ -48,15 +48,30 @@
 		bottom: $bottom;
 	}
 }
+@mixin fcw(
+	$size: null,
+	$color: null,
+	$weight: null
+){
+	@if($size){
+		font-size: $size;
+	}
+	@if($color){
+		color: $color
+	}
+	@if($weight){
+		font-weight: $weight;
+	}
+}
 
 body,html{
 	@include size(100%,100%);
 }
 
 .tips{
-	margin-top: 30px;
-	@include fcw(1.2em,red);
 	text-align: center;
+	@include fcw(1.2em,red);
+	margin-top: 30px;
 }
 
 .file-select{
