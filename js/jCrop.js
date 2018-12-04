@@ -231,7 +231,7 @@
 
 		this.reset();
 
-		callhook(this,'afterCreate');
+		callhook(this,'created',this.canvas,this.clientWidth,this.clientHeight);
 	};
 
 	/*
@@ -302,8 +302,6 @@
 		//重绘画布及裁剪框
 		this._redraw();
 		this.showCroper();
-
-		callhook(this,'created',this.canvas,this.clientWidth,this.clientHeight);
 	};
 
 	/*
