@@ -70,8 +70,9 @@ body,html{
 
 .tips{
 	text-align: center;
-	@include fcw(1.2em,red);
-	margin-top: 30px;
+	@include fcw(0.3rem,red);
+	margin-top: 0.4rem;
+	overflow: hidden;
 }
 
 .file-select{
@@ -107,4 +108,48 @@ body,html{
 		margin-left: -0.5px;
 		content: '';
 	}
+}
+
+.modal{
+	z-index: 1;
+	@include pos(0,0,fixed);
+	@include size(100%,100%);
+
+	.view{
+		@include size(100%,80%);
+		background: rgba(0,0,0,0.5);
+		z-index: 2;
+		overflow: hidden;
+		text-align: center;
+
+		canvas{
+			vertical-align: middle;
+		}
+	}
+	
+	.btns{
+		@include size(100%,20%);
+		text-align: center;
+		box-sizing: border-box;
+		padding: 0 0.5rem;
+		overflow: hidden;
+		margin: 0.2rem auto 0;
+		
+		.btn{
+			cursor: pointer;
+			border-radius: 3px;
+			padding: 10px 20px;
+			display: inline-block;
+			@include fcw(0.25rem,#fff);
+			background: green;
+			margin-top: 0.2rem;
+			user-select: none;
+			margin: 0.1rem 0.25rem;
+
+			&:hover{
+				background: #025e02;
+			}
+		}
+	}
+
 }

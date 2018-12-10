@@ -3,7 +3,6 @@
 <head>
 	<meta charset="UTF-8">
 	<title>图片裁剪demo</title>
-	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=0">
 	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
 	<style type="text/css">
 		
@@ -22,8 +21,78 @@
 
 	    .clearfix:after {content: "."; display: block; height:0; clear:both; visibility: hidden;}
 	    .clearfix { *zoom:1; }
-
 	</style>
+	<script type="text/javascript">
+		(function(win,doc,designWidth){
+
+			var docEl = doc.documentElement,
+				metaEl = doc.querySelector('meta[name="viewport"]'),
+				dpr = 0,
+				scale = 0,
+				timer;
+
+			if(metaEl){//根据已有meta的viewport来设置
+				var matches = metaEl.getAttribute('content').match(/initial\-scale=([\d\.]+)/i);
+				if(matches){
+					scale = parseFloat(matches[1]);
+					dpr = 1 / scale;
+				}
+			}
+
+			if(!dpr && !scale){
+				var appVersion = navigator.appVersion,
+					isAndroid = /android/gi.test(appVersion),
+					isIPhone = /iphone/gi.test(appVersion),
+					devicePixelRatio = win.devicePixelRatio;
+
+				if(isIPhone){//iphone设备
+
+					if(devicePixelRatio >= 3 && (!dpr || dpr >= 3)){
+						dpr = 3;
+					}else if(devicePixelRatio >=2 && (!dpr || dpr >= 2)){
+						dpr = 2;
+					}else{
+						dpr = 1;
+					}
+
+				}else{//android及其他设备
+					dpr = 1;
+				}
+				scale = 1 / dpr;
+			}
+
+			docEl.setAttribute('data-dpr',dpr);
+			if(!metaEl){
+				metaEl = doc.createElement('meta');
+				metaEl.setAttribute('name','viewport');
+				metaEl.setAttribute('content','initial-scale=' + scale + ',minimum-scale=' + scale + ',maximum-scale=' + scale + ',user-scalable=no');
+				if(docEl.firstElementChild){
+					docEl.firstElementChild.appendChild(metaEl);
+				}
+			}
+
+			win.addEventListener('resize',refreshRem,false);
+			win.addEventListener('DOMContentLoaded',refreshRem,false);
+
+			function refreshRem(){
+				clearTimeout(timer);
+				timer = setTimeout(function(){
+					var rootWidth = Math.max(docEl.offsetWidth,docEl.clientWidth);
+					if(rootWidth / dpr > 540){
+						rootWidth = 540 * dpr;
+					}
+					var rem = rootWidth * 100 / designWidth;//跟元素fontSize放大了100倍，相应的设计稿元素px转换为rem要除以100
+					docEl.style.fontSize = rem + 'px';
+				},300);
+			}
+
+			win.addEventListener('unload',function(){
+				win.removeEventListener('resize',refreshRem,false);
+				win.removeEventListener('DOMContentLoaded',onPageShow,false)
+			},false);
+
+		})(window,document,750);//设计稿尺寸
+	</script>
 	<link rel="stylesheet" type="text/css" href="css/demo.css">
 	<script type="text/javascript" src="../js/jCrop.js"></script>
 </head>
@@ -36,6 +105,18 @@
 	<div class="file-select">
 		<input type="file" name="imgcut" accept="image/jpeg,image/jpg,image/png">
 	</div>
+
+	<!-- <div class="modal">
+		<div class="view"></div>
+		<div class="btns">
+			<div class="btn reset">重置</div>
+			<div class="btn sure">裁剪</div>
+			<div class="btn zoom">放大</div>
+			<div class="btn shrink">缩小</div>
+			<div class="btn clockwise">顺时针旋转</div>
+			<div class="btn counterclockwise">逆时针旋转</div>
+		</div>
+	</div> -->
 
 	<script type="text/javascript">
 		
@@ -73,7 +154,7 @@
 		}
 
 		function preview(imgOrSrc){
-
+			console.log(imgOrSrc);
 		}
 		function logout(){
 			window.removeEventListener('DOMContentLoaded',ready,false);

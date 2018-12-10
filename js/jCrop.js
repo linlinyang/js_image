@@ -618,8 +618,7 @@
 	* 鼠标滚轮事件
 	*/
 	Croper.prototype._scroll = function(e){
-		var type = e.type,
-			wheelDelta = e.wheelDelta
+		var wheelDelta = e.wheelDelta
 							? e.wheelDelta / -120
 							: e.deltaY
 								? e.deltaY / 3
