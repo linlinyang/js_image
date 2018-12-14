@@ -917,7 +917,9 @@
 
 		this.mouseWheelPositioning(x,y);
 
-		if(!status || status == MOUSECURSORDEFAULT){return;}
+		if(!status || status == MOUSECURSORDEFAULT){
+			return;
+		}
 
 		switch(status){
 			case MOUSECURSORNWRESIZE://draw on left top
