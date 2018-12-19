@@ -1384,7 +1384,6 @@
 		return resCanvas.toDataURL('image/png',this.quality);
 	};
 
-
 	function jCrop(srcOrImg,options){
 		return new Croper(srcOrImg,options);
 	}
