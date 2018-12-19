@@ -77,6 +77,8 @@
 
 	<div class="preview"></div>
 
+	<button>Click</button>
+
 	<script type="text/javascript" src="js/jCrop.js"></script>
 	<script type="text/javascript">
 		
@@ -84,15 +86,18 @@
 
 		function ready(){
 			var ss = jCrop('images/cat.jpg',{
-				el: '#crop',
 				resizable: true,
-				cropWidth: 300,
-				cropHeight: 300,
+				/*cropType: 'circle',*/
+				width: 900,
+				height: 600,
 				created: function(canvas,width,height){
+					document.querySelector('.model').appendChild(canvas);
 				}
 			});
 			
-			
+			document.querySelector('button').addEventListener('click',function(){
+				ss.reset();
+			},false);
 			console.log(ss);
 
 			/*document.querySelector('#file').addEventListener('change',function(e){

@@ -1,20 +1,22 @@
 body, html {
   width: 100%;
-  height: 100%; }
+  height: 100%;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden; }
 
 .tips {
   text-align: center;
-  font-size: 0.3rem;
+  font-size: 20px;
   color: red;
-  margin-top: 0.4rem;
-  overflow: hidden; }
+  overflow: hidden;
+  margin-top: 40px; }
 
 .file-select {
-  height: 0;
-  padding-bottom: 50%;
   border: 1px solid #ccc;
-  width: 50%;
+  width: 30vw;
   margin: 7% auto 0;
+  height: 30vw;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -36,7 +38,6 @@ body, html {
     width: 80%;
     height: 0;
     border-bottom: 1px solid #ccc;
-    margin-top: -0.5px;
     content: ''; }
   .file-select:after {
     position: absolute;
@@ -45,8 +46,16 @@ body, html {
     width: 0;
     height: 80%;
     border-left: 1px solid #ccc;
-    margin-left: -0.5px;
     content: ''; }
+
+.result {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px; }
+  .result img {
+    max-width: 800px; }
 
 .modal {
   z-index: 1;
@@ -59,38 +68,45 @@ body, html {
   .modal .view {
     width: 100%;
     height: 80%;
-    background: rgba(0, 0, 0, 0.5);
+    background: black;
     z-index: 2;
     overflow: hidden;
     text-align: center;
-    position: relative; }
-    .modal .view canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      margin: auto; }
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center; }
   .modal .btns {
     width: 100%;
     height: 20%;
     text-align: center;
-    box-sizing: border-box;
-    padding: 0 0.5rem;
-    overflow: hidden;
-    margin: 0.2rem auto 0; }
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-items: center; }
     .modal .btns .btn {
       cursor: pointer;
       border-radius: 3px;
       padding: 10px 20px;
-      display: inline-block;
-      font-size: 0.2rem;
+      font-size: 16px;
       color: #fff;
-      background: green;
-      margin-top: 0.2rem;
+      background: #36a3b1;
       user-select: none;
-      margin: 0.1rem 0.25rem; }
+      margin-left: 20px; }
       .modal .btns .btn:hover {
-        background: #025e02; }
+        background: #2a93a0; }
+
+@media screen and (max-width: 750px) {
+  .tips {
+    margin-top: 30px; }
+
+  .file-select {
+    width: 50vw;
+    height: 50vw; }
+
+  .modal .btns .btn {
+    font-size: 12px;
+    color: #fff;
+    margin-left: 10px; } }
 
 /*# sourceMappingURL=demo.css.map */

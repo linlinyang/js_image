@@ -23,30 +23,20 @@
 	    .clearfix:after {content: "."; display: block; height:0; clear:both; visibility: hidden;}
 	    .clearfix { *zoom:1; }
 	</style>
-	<script type="text/javascript">
-		function setRem(){
-			var docEl = document.documentElement,
-				rootWidth = Math.max(docEl.clientWidth,docEl.offsetWidth);
-
-			docEl.style.fontSize = rootWidth > 1080
-									? '16px'
-									: rootWidth / 7.5 + 'px'
-		}
-		window.addEventListener('DOMContentLoaded',setRem,false);
-		window.addEventListener('resize',setRem,false);
-	</script>
 	<link rel="stylesheet" type="text/css" href="css/demo.css">
 	<script type="text/javascript" src="../js/jCrop.js"></script>
 </head>
 <body>
 	
 	<div class="tips">
-		<span>由于裁剪功能使用的是画布元素，所以只兼容至IE9+</span>
+		<span>由于IE9及以下不支持FileReader，不能读取文件到画布元素，故只能支持到IE10+</span>
 	</div>
 
 	<div class="file-select">
-		<input type="file" name="imgcut" accept="image/jpeg,image/jpg,image/png">
+		<input type="file" name="imgcut" accept="image/jpeg,image/jpg,image/png" capture="camera">
 	</div>
+
+	<div class="result"></div>
 
 	<div class="modal">
 		<div class="view"></div>
@@ -57,14 +47,16 @@
 			<div class="btn shrink">缩小</div>
 			<div class="btn clockwise">顺时针旋转</div>
 			<div class="btn counterclockwise">逆时针旋转</div>
+			<div class="btn cancel">取消</div>
 		</div>
 	</div>
 
 	<script type="text/javascript">
-		
+
 		window.addEventListener('DOMContentLoaded',ready,false);
 		function ready(){
 			document.querySelector('.file-select input').addEventListener('change',fileSelect,false);
+			window.addEventListener('click',click,false);
 		}
 		function fileSelect(e){
 			var file = e.target,
@@ -83,33 +75,102 @@
 					preview(this.result);
 				};
 				reader.readAsDataURL(file.files[0]);
-			}else if(document.all){//IE9
-				file.select();
-				file.blur();
-				var reallocalpath = document.selection.createRange().text,
-					img = new Image();
-
-				img.style.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod='image',src=\"" + reallocalpath + "\")";
-				img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
-				preview(img);
+			}else{//IE9
+				alert('您的浏览器不支持图片上传！');
 			}
 		}
 
+		var cropper;
 		function preview(imgOrSrc){
-			var cropper = jCrop(imgOrSrc,{
-				el: '.modal .view',
+			var docEl = document.documentElement,
+				winWidth = docEl.clientWidth,
+				winHeight = docEl.clientHeight,
+				cropWidth = Math.min(winWidth,800),
+				cropHeight = winHeight > 600
+								? 600
+								: cropHeight * 0.8;
+
+
+			cropper = jCrop(imgOrSrc,{
 				resizable: true,
-				cropWidth: 300,
-				cropHeight: 300,
+				width: cropWidth,
+				height: cropHeight,
+				/*cropWidth: 300,
+				cropHeight: 300,*/
+				/*cropType: 'circle',
+				radius: 200,*/
 				created: function(canvas,width,height){
+					var modal = document.querySelector('.modal'),
+						viewEl = modal.querySelector('.view');
+					viewEl.appendChild(canvas);
+					modal.style.display = 'block';
 					console.log(cropper);
-					document.querySelector('.modal').style.display = 'block';
 				}
 			});
 		}
+
+		function click(e){
+			var target = e.target;
+
+			if(target.classList.contains('reset')){
+				cropper.reset();
+			}
+			if(target.classList.contains('sure')){
+				var imgSrc = cropper.cut(),
+					result = document.querySelector('.result'),
+					img = new Image(),
+					modal = document.querySelector('.modal'),
+					viewEl = modal.querySelector('.view');
+
+				result.firstElementChild && result.removeChild(result.firstElementChild);
+				img.onload = function(){
+					result.appendChild(img);
+					viewEl.removeChild(cropper.canvas);
+					modal.style.display = 'none';
+					cropper.destroy();
+
+					result = viewEl = modal= img = null;
+				};
+				img.src = imgSrc;
+
+			}
+			if(target.classList.contains('zoom')){
+				var originScaleX = cropper.scaleX,
+					originScaleY = cropper.scaleY;
+
+				cropper.scale(originScaleX + 0.1,originScaleY + 0.1);
+			}
+			if(target.classList.contains('shrink')){
+				var originScaleX = cropper.scaleX,
+					originScaleY = cropper.scaleY;
+
+				cropper.scale(originScaleX - 0.1,originScaleY - 0.1);
+			}
+			if(target.classList.contains('clockwise')){
+				var rotateZ = cropper.rotateZ;
+
+				cropper.rotate(rotateZ + 1);
+			}
+			if(target.classList.contains('counterclockwise')){
+				var rotateZ = cropper.rotateZ;
+
+				cropper.rotate(rotateZ - 1);
+			}
+			if(target.classList.contains('cancel')){
+				var modal = document.querySelector('.modal'),
+					viewEl = modal.querySelector('.view');
+
+				viewEl.removeChild(cropper.canvas);
+				modal.style.display = 'none';
+				cropper.destroy();
+				cropper = null;
+			}
+		}
+
 		function logout(){
 			window.removeEventListener('DOMContentLoaded',ready,false);
 			document.querySelector('.file-select input').removeEventListener('change',fileSelect,false);
+			window.removeEventListener('click',click,false);
 		}
 		window.addEventListener('unload',logout,false);
 	</script>

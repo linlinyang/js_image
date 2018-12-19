@@ -102,6 +102,13 @@
 		return Math.sqrt(Math.pow(dx - sx,2) + Math.pow(dy - sy,2));
 	}
 
+	/*
+	* 计算两点相对以起点作水平线的角度
+	* @params{sx} Number;起点x坐标
+	* @params{sy} Number;起点y坐标
+	* @params{dx} Number;终点x坐标
+	* @params{dy} Number;终点y坐标
+	*/
 	function angleComputed(sx,sy,dx,dy){
 		return Math.atan(dy - sy / dx - sx);
 	}
@@ -176,9 +183,11 @@
 	*/
 	function Croper(srcOrImg,options){
 		assign(this,{//合并参数
-			_maxSize: 2000,
+			maxSize: 2000,
 			quality: 1,
-			type: 'image/png'
+			type: 'image/png',
+			width: 800,
+			height: 600
 		},this._opts = options);
 
 		this._loadImg(srcOrImg,this._init);
@@ -229,9 +238,18 @@
 	Croper.prototype._init = function(){
 		this._checkImageSize();
 
+		//重置图片大小
+		this._resetImgSize();
+
+		//重新装载画布及裁剪框
+		this._installViewport();
+
+		//初始化事件绑定
+		this._initEvent();
+
 		this.reset();
 
-		callhook(this,'created',this.canvas,this.clientWidth,this.clientHeight);
+		callhook(this,'created',this.canvas,this.width,this.height);
 	};
 
 	/*
@@ -241,7 +259,7 @@
 		var img = this._img,
 			imgWidth = this._imgWidth,
 			imgHeight = this._imgHeight,
-			maxSize = this._maxSize,
+			maxSize = this.maxSize,
 			max = Math.max(imgWidth,imgHeight);
 
 		if(max > maxSize){//超出最大尺寸限制
@@ -252,94 +270,49 @@
 	};
 
 	/*
-	* 根据容器来设置画布大小，没有则按照图片大小设置
+	* 根据画布大小设置图片大小，超出等比缩放
 	*/
-	Croper.prototype._resetCropperSize = function(){
-		var el = this.el,
+	Croper.prototype._resetImgSize = function(){
+		var width = this.width,
+			height = this.height,
 			originWidth = this._imgWidth,
-			originHeight = this._imgHeight;
+			originHeight = this._imgHeight,
+			maxRatio = Math.max(originWidth / width,originHeight / height);
 
-		this.clientWidth = originWidth;
-		this.clientHeight = originHeight;
-
-		if(typeof el === 'string'){
-			try{
-				this.el = el = doc.querySelector(el);
-			}catch(e){
-				throw e;
-			}
+		if(maxRatio > 1){
+			this._imgWidth = originWidth / maxRatio;
+			this._imgHeight = originHeight / maxRatio;
 		}
-
-		if(el && el.clientWidth){
-			var clientWidth = el.clientWidth,
-				clientHeight = el.clientHeight,
-				minRatio = Math.max(originWidth / clientWidth,originHeight / clientHeight);
-			if(minRatio > 1){//等比缩小图片大小如果图片大小超出容器大小，然后设置画布大小
-				this.clientWidth = this._img.width = originWidth / minRatio;
-				this.clientHeight = this._img.height = originHeight / minRatio;
-			}
-		}
-
 	};
 
 	/*
 	* 重置画布大小、放大缩小比例、旋转度数并重绘
 	*/
 	Croper.prototype.reset = function(){
-		//重置画布大小啊
-		this._resetCropperSize();
-
 		//重置画布放大缩小比例、旋转度数
 		this.scaleX = 1;
 		this.scaleY = 1;
 		this.rotateZ = 0;
 
-		//重新装载画布及裁剪框
-		this._installViewport();
-
-		//初始化事件绑定
-		this._initEvent();
+		//装载裁剪框及重置
+		this._installCropBox(this.cropType);
 
 		//重绘画布及裁剪框
 		this._redraw();
-		this.showCroper();
 	};
 
 	/*
 	* 装载画布及裁剪框
 	*/
 	Croper.prototype._installViewport = function(){
-		//如果存在旧的画布，则解除旧的画布的绑定事件
-		this.off();
-		var width = this.clientWidth,
-			height = this.clientHeight,
+		var canvas = this.canvas;
+
+		if(!canvas){
 			canvas = this.canvas = doc.createElement('canvas');//生成新的画布
-
-		canvas.innerHTML = '浏览器不支持canvas';
-		canvas.width = width;
-		canvas.height = height;
-
-		//装载裁剪框及重置
-		this._installCropBox(this.cropType);
-	};
-
-
-	/*
-	* 在画布容器中展示画布,初始化画布偏移位置
-	*/
-	Croper.prototype.showCroper = function(){
-		var canvas = this.canvas,
-			el = this.el;
-
-		if(el && el.firstElementChild){
-			el.removeChild(el.firstElementChild);
+			canvas.innerHTML = '浏览器不支持canvas';
+			canvas.width = this.width;
+			canvas.height = this.height;
 		}
-		el && el.appendChild && el.appendChild(canvas);
-
-		var offsetObj = offset(canvas);
-		this.offsetLeft = offsetObj.left;
-		this.offsetTop = offsetObj.top;
-		offsetObj = null;
 	};
 
 	/*
@@ -347,8 +320,10 @@
 	*/
 	Croper.prototype._redraw = function(){
 		var canvas = this.canvas,
-			width = this.clientWidth,
-			height = this.clientHeight,
+			width = this.width,
+			height = this.height,
+			originWidth = this._imgWidth,
+			originHeight = this._imgHeight,
 			scaleX = this.scaleX,
 			scaleY = this.scaleY,
 			rotateZ = this.rotateZ;
@@ -363,8 +338,13 @@
 		ctx.rotate(rotateZ * Math.PI / 180);
 		ctx.translate(-width / 2,-height / 2);
 
-		ctx.drawImage(this._img,0,0,width,height);
-
+		ctx.drawImage(
+			this._img,
+			(width - originWidth) / 2,
+			(height - originHeight) / 2,
+			originWidth,
+			originHeight
+		);
 		ctx.restore();
 
 		//备份当前状态的背景图画布
@@ -383,8 +363,10 @@
 		cropType = String(cropType).toLowerCase();
 		var cropBoxOpts = assign(this._opts,{
 				canvas: this.canvas,
-				croperWidth: this.clientWidth,
-				croperHeight: this.clientHeight,
+				croperWidth: this.width,
+				croperHeight: this.height,
+				imgWidth: this._imgWidth,
+				imgHeight: this._imgHeight,
 				type: this.type,//图片类型
 				quality: this.quality,//图片质量
 				resizable: this.resizable//裁剪框是否可拉伸变形
@@ -409,6 +391,12 @@
 	* @params{deg} Number;旋转度数，正数顺时针，负数逆时针
 	*/
 	Croper.prototype.rotate = function(deg){
+		deg = parseFloat(deg);
+
+		if(isNaN(deg)){
+			return ;
+		}
+
 		this.rotateZ = parseFloat(deg);
 
 		this._redraw();
@@ -420,8 +408,15 @@
 	* @params{scaleY} Number;垂直方向缩放
 	*/
 	Croper.prototype.scale = function(scaleX,scaleY){
-		this.scaleX = Math.min(Math.max(parseFloat(scaleX),0.5),3);
-		this.scaleY = Math.min(Math.max(parseFloat(scaleY),0.5),3);
+		scaleX = parseFloat(scaleX);
+		scaleY = parseFloat(scaleY);
+
+		if(isNaN(scaleX) || isNaN(scaleY)){
+			return ;
+		}
+
+		this.scaleX = Math.min(Math.max(scaleX,0.5),3);
+		this.scaleY = Math.min(Math.max(scaleY,0.5),3);
 
 		this._redraw();
 	};
@@ -435,6 +430,10 @@
 	Croper.prototype.on = function(event,handle,isBobble){
 		var canvas = this.canvas,
 			cacheEvents = this._cacheEvents || [];
+
+		if(!canvas){
+			return;
+		}
 
 		cacheEvents.push({
 			type: event,
@@ -457,7 +456,7 @@
 
 		if(!canvas){return ; } 
 
-		var cacheEvents = this._cacheEvents,
+		var cacheEvents = this._cacheEvents || [],
 			len = cacheEvents.length;
 
 		while(len--){
@@ -485,6 +484,7 @@
 	*/
 	Croper.prototype._initEvent = function(){
 		var canvas = this.canvas;
+		this.off();
 
 		this.on('mousedown',this._beginDrag.bind(this));
 		this.on('mousemove',this._dragging.bind(this));
@@ -531,11 +531,14 @@
 			fingersNum = touches.length;
 
 		if(fingersNum == 1){//一个手指，拖拽
-			var finger = e.changedTouches[0];
+			var finger = e.changedTouches[0],
+				offsetObj = offset(this.canvas);
+
 			this._beginDrag({
-				offsetX: finger.clientX - this.offsetLeft,
-				offsetY: finger.clientY - this.offsetTop
+				offsetX: finger.clientX - offsetObj.left,
+				offsetY: finger.clientY - offsetObj.top
 			});
+			finger = offsetObj = null;
 		}else if(fingersNum == 2){//两个手指，缩放旋转
 			this._startTouches = touches;
 		}
@@ -550,12 +553,14 @@
 			fingersNum = touches.length;
 
 		if(fingersNum == 1){//一个手指，拖拽
-			var finger = e.changedTouches[0];
+			var finger = e.changedTouches[0],
+				offsetObj = offset(this.canvas);
 
 			this._dragging({
-				offsetX: finger.clientX - this.offsetLeft,
-				offsetY: finger.clientY - this.offsetTop
+				offsetX: finger.clientX - offsetObj.left,
+				offsetY: finger.clientY - offsetObj.top
 			});
+			finger = offsetObj = null;
 		}else if(fingersNum == 2){//两个手指，缩放旋转
 			var startTouches = this._startTouches,
 				scale = distanceComputed(
@@ -604,11 +609,14 @@
 			fingersNum = touches.length;
 
 		if(fingersNum == 1){//一个手指，拖拽
-			var finger = e.changedTouches[0];
+			var finger = e.changedTouches[0],
+				offsetObj = offset(this.canvas);
+
 			this._endDrag({
-				offsetX: finger.clientX - this.offsetLeft,
-				offsetY: finger.clientY - this.offsetTop
+				offsetX: finger.clientX - offsetObj.left,
+				offsetY: finger.clientY - offsetObj.top
 			});
+			finger = offsetObj = null;
 		}else if(fingersNum == 2){//两个手指，缩放旋转
 			this._startTouches = null;
 		}
@@ -675,17 +683,18 @@
 	* 重置矩形裁剪框大小，位置居中
 	*/
 	CropBox.prototype.reset = function(){
-		var croperWidth = this.croperWidth,
-			croperHeight = this.croperHeight,
-			minimumLength = Math.min(croperWidth,croperHeight),
-			cropBoxWidth = this.cropBoxWidth,
-			cropBoxHeight = this.cropBoxHeight,
-			width,height;
+		var imgWidth = this.imgWidth,
+			imgHeight = this.imgHeight,
+			cropWidth = this.croperWidth,
+			cropHeight = this.croperHeight,
+			minimumLength = Math.min(imgWidth,imgHeight),
+			width = this.cropWidth,
+			height = this.cropHeight;
 
-		this.width = width = Math.min(cropBoxWidth ? cropBoxWidth : minimumLength / 2,croperWidth);
-		this.height = height = Math.min(cropBoxHeight ? cropBoxHeight : minimumLength / 2,croperHeight);
-		this.x = (croperWidth - width) / 2;
-		this.y = (croperHeight - height) / 2;
+		this.width = width = Math.min(width ? width : minimumLength / 2,imgWidth);
+		this.height = height = Math.min(height ? height : minimumLength / 2,imgHeight);
+		this.x = (cropWidth - width) / 2;
+		this.y = (cropHeight - height) / 2;
 	};
 
 	/*
@@ -890,8 +899,8 @@
 		assign(parent,{
 			x: child.x,
 			y: child.y,
-			width: child.width,
-			height: child.height
+			cropWidth: child.width,
+			cropHeight: child.height
 		});
 	}
 
@@ -1116,7 +1125,9 @@
 	CircleCropBox.prototype.reset = function(){
 		var croperWidth = this.croperWidth,
 			croperHeight = this.croperHeight,
-			size = Math.min(croperWidth,croperHeight),
+			imgWidth = this.imgWidth,
+			imgHeight = this.imgHeight,
+			size = Math.min(imgWidth,imgHeight),
 			radius = this.radius,
 			x = this.x,
 			y = this.y;
