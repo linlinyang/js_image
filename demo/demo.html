@@ -24,7 +24,7 @@
 	    .clearfix { *zoom:1; }
 	</style>
 	<link rel="stylesheet" type="text/css" href="css/demo.css">
-	<script type="text/javascript" src="../js/jCrop.js"></script>
+	<script type="text/javascript" src="../js/jCrop.min.js"></script>
 </head>
 <body>
 	
@@ -86,23 +86,24 @@
 				winWidth = docEl.clientWidth,
 				winHeight = docEl.clientHeight,
 				cropWidth = Math.min(winWidth,800),
-				cropHeight = winHeight > 600
+				cropHeight = winWidth > 800
 								? 600
-								: cropHeight * 0.8;
+								: winHeight * 0.6;
 
 
 			cropper = jCrop(imgOrSrc,{
 				resizable: true,
 				width: cropWidth,
 				height: cropHeight,
-				cropWidth: 300,
-				cropHeight: 300,
+				/*cropWidth: 300,
+				cropHeight: 300,*/
 				shadowStyle: 'rgba(83,118,158,0.4)',
 				lineStyle: '#34d51b',
 				resizeDotStyle: '#34d51b',
 				dashLineStyle: 'rgba(226,203,157,0.3)',
 				dotSize: 10,
 				quality: 1,
+				type: 'image/jpeg',
 				/*cropType: 'circle',
 				radius: 200,*/
 				created: function(canvas,width,height){

@@ -693,7 +693,7 @@
 
 		this.width = width = Math.min(width ? width : minimumLength / 2,imgWidth);
 		this.height = height = Math.min(height ? height : minimumLength / 2,imgHeight);
-		this.x = (cropWidth - width) / 2;
+		this.x = (cropWidth - width ) / 2;
 		this.y = (cropHeight - height) / 2;
 	};
 
