@@ -329,6 +329,11 @@
 			rotateZ = this.rotateZ;
 
 		var ctx = canvas.getContext('2d');
+		ctx.mozImageSmoothingEnabled = false;
+	    ctx.webkitImageSmoothingEnabled = false;
+	    ctx.msImageSmoothingEnabled = false;
+	    ctx.imageSmoothingEnabled = false;
+
 		ctx.save();
 		ctx.clearRect(0,0,width,height);
 
@@ -337,7 +342,7 @@
 		ctx.translate(width / 2,height / 2);
 		ctx.rotate(rotateZ * Math.PI / 180);
 		ctx.translate(-width / 2,-height / 2);
-
+		
 		ctx.drawImage(
 			this._img,
 			(width - originWidth) / 2,

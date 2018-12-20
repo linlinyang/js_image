@@ -24,7 +24,7 @@
 	    .clearfix { *zoom:1; }
 	</style>
 	<link rel="stylesheet" type="text/css" href="css/demo.css">
-	<script type="text/javascript" src="../js/jCrop.min.js"></script>
+	<script type="text/javascript" src="../js/jCrop.js"></script>
 </head>
 <body>
 	
@@ -56,7 +56,7 @@
 		window.addEventListener('DOMContentLoaded',ready,false);
 		function ready(){
 			document.querySelector('.file-select input').addEventListener('change',fileSelect,false);
-			window.addEventListener('click',click,false);
+			document.body.addEventListener('click',click,false);
 		}
 		function fileSelect(e){
 			var file = e.target,
