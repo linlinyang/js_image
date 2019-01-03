@@ -1,2 +1,2 @@
 # js_image
-libary for upload image and cur,compress image
+libary for upload image and cut,compress image

@@ -48,22 +48,6 @@
 		bottom: $bottom;
 	}
 }
-@mixin fcw(
-	$size: null,
-	$color: null,
-	$weight: null
-){
-	@if($size){
-		font-size: $size;
-	}
-	@if($color){
-		color: $color
-	}
-	@if($weight){
-		font-weight: $weight;
-	}
-}
-
 body,html{
 	@include size(100%,100%);
 	-webkit-tap-highlight-color: rgba(0,0,0,0);
