@@ -96,6 +96,8 @@
 				var resultEl = document.querySelector('.result'),
 					img = new Image();
 				img.src = cropper.cut();
+				img.width = cropper.width;
+				img.height = cropper.height;
 				img.onload = function(){
 					resultEl.firstElementChild && resultEl.removeChild(resultEl.firstElementChild);
 					resultEl.appendChild(img);

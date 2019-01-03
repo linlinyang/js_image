@@ -876,28 +876,29 @@
 		trmpCanvas.style.width = originWidth + 'px';
 		trmpCanvas.style.height = originHeight + 'px';
 
-		tempCtx.clearRect(0,0,originWidth,originHeight);
-		x = (xSpace - x) / zoom;
-		y = (ySpace - y) / zoom;
-		tempCtx.rect(x,y,width,height);
+		tempCtx.clearRect(0,0,originWidth* zoom,originHeight* zoom);
+		x = (xSpace - x);
+		y = (ySpace - y);
+		tempCtx.rect(x,y,width * zoom,height * zoom);
 		tempCtx.clip();
-		console.log(width,height);
 
 		tempCtx.drawImage(
 			this._imageSource,
 			0,
 			0,
-			originWidth,
-			originHeight
+			originWidth * zoom,
+			originHeight * zoom
 		);
 
 		var resultCanvas = document.createElement('canvas'),
 			resultCtx = resultCanvas.getContext('2d'),
-			tempData = tempCtx.getImageData(x,y,width,height);
+			tempData = tempCtx.getImageData(x,y,width * zoom,height * zoom);
 
-		resultCanvas.width = width;
-		resultCanvas.height = height;
-		resultCtx.putImageData(tempData,0,0,0,0,width,height);
+		resultCanvas.width = width * zoom;
+		resultCanvas.height = height * zoom;
+		resultCanvas.style.width = width + 'px';
+		resultCanvas.style.height = height + 'px';
+		resultCtx.putImageData(tempData,0,0,0,0,width * zoom,height * zoom);
 
 		return resultCanvas.toDataURL('image/png',this.quality);
 	}
