@@ -596,11 +596,11 @@
 	*/
 	Croper.prototype._touchEnd = function(e){
 		e.preventDefault();
-		var touches = e.touches,
+		var touches = e.changedTouches,
 			fingersNum = touches.length;
 
 		if(fingersNum == 1){//一个手指，拖拽
-			var finger = e.changedTouches[0],
+			var finger = touches[0],
 				offsetObj = offset(this.canvas);
 
 			this._endDrag({
@@ -671,7 +671,7 @@
 		ctx.clearRect(0,0,croperWidth,croperHeight);
 	    ctx.save();
 
-	    ctx.fillStyle = this._backgroundColor;//填充裁剪面板背景色
+	    ctx.fillStyle = this.shadowColor;//填充裁剪面板背景色
 	    ctx.fillRect(0,0,croperWidth,croperHeight);
 
 		ctx.drawImage(
@@ -733,7 +733,6 @@
 			vDistance = height / 10,
 			edgeWidth = this.edgeWidth,
 			lineColor = this.lineColor,
-			shadowColor = this.shadowColor,
 			croperWidth = this.croperWidth * zoom,
 			croperHeight = this.croperHeight * zoom,
 			x = (croperWidth - width) / 2,
@@ -748,7 +747,7 @@
 		*/
 		ctx.save();
 		ctx.beginPath();
-		ctx.fillStyle = shadowColor;
+		ctx.fillStyle = this._backgroundColor;
 		rect(ctx,0,0,croperWidth,croperHeight,true);
 		rect(ctx,x,y,width,height);
 		ctx.closePath();
@@ -876,9 +875,9 @@
 		tempCanvas.style.width = originWidth + 'px';
 		tempCanvas.style.height = originHeight + 'px';
 
-		tempCtx.clearRect(0,0,originWidth* zoom,originHeight* zoom);
-		x = (xSpace - x);
-		y = (ySpace - y);
+		tempCtx.clearRect(0,0,originWidth * zoom,originHeight * zoom);
+		x = parseInt(xSpace - x);
+		y = parseInt(ySpace - y);
 		tempCtx.rect(x,y,width * zoom,height * zoom);
 		tempCtx.clip();
 
@@ -889,18 +888,19 @@
 			originWidth * zoom,
 			originHeight * zoom
 		);
-
+		
 		var resultCanvas = document.createElement('canvas'),
 			resultCtx = resultCanvas.getContext('2d'),
 			tempData = tempCtx.getImageData(x,y,width * zoom,height * zoom);
 
+		tempCanvas = tempCtx = null;
 		resultCanvas.width = width * zoom;
 		resultCanvas.height = height * zoom;
 		resultCanvas.style.width = width + 'px';
 		resultCanvas.style.height = height + 'px';
 		resultCtx.putImageData(tempData,0,0,0,0,width * zoom,height * zoom);
 
-		return resultCanvas.toDataURL('image/png',this.quality);
+		return resultCanvas.toDataURL(this.imgType,this.quality);
 	}
 
 	/*

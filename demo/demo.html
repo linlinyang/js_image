@@ -33,7 +33,7 @@
 	</div>
 
 	<div class="file-select">
-		<input type="file" name="imgcut" accept="image/jpeg,image/jpg,image/png" capture="camera">
+		<input type="file" name="imgcut" accept="image/jpeg,image/jpg,image/png">
 	</div>
 
 	<div class="result"></div>
@@ -45,8 +45,6 @@
 			<div class="btn sure">裁剪</div>
 			<div class="btn zoom">放大</div>
 			<div class="btn shrink">缩小</div>
-			<div class="btn clockwise">顺时针旋转</div>
-			<div class="btn counterclockwise">逆时针旋转</div>
 			<div class="btn cancel">取消</div>
 		</div>
 	</div>
@@ -72,7 +70,7 @@
 			if(window.FileReader){//File Reader
 				var reader = new FileReader();
 				reader.onload = function(){
-					preview(this.result);
+					preview(this.result,ext);
 				};
 				reader.readAsDataURL(file.files[0]);
 			}else{//IE9
@@ -81,7 +79,7 @@
 		}
 
 		var cropper;
-		function preview(imgOrSrc){
+		function preview(imgOrSrc,type){
 			var docEl = document.documentElement,
 				winWidth = docEl.clientWidth,
 				winHeight = docEl.clientHeight,
@@ -92,26 +90,26 @@
 
 
 			cropper = jCrop(imgOrSrc,{
-				resizable: true,
-				width: cropWidth,
-				height: cropHeight,
-				/*cropWidth: 300,
-				cropHeight: 300,*/
-				shadowStyle: 'rgba(83,118,158,0.4)',
-				lineStyle: '#34d51b',
-				resizeDotStyle: '#34d51b',
-				dashLineStyle: 'rgba(226,203,157,0.3)',
-				dotSize: 10,
+				croperWidth: 800,
+				croperHeight: 600,
+				width: 300,
+				height: 300,
+				shadowColor: 'rgba(0,0,0,0.7)',
+				lineColor: '#fff',
+				dashLineColor: 'rgba(255,255,255,0.8)',
+				edgeWidth: 3,
 				quality: 1,
-				type: 'image/jpeg',
-				/*cropType: 'circle',
-				radius: 200,*/
+				offBackgroundColor: 'rgba(0,0,0,0.6)',
+				onBackgroundColor: 'rgba(0,0,0,0.2)',
+				imgType: 'image/jpeg',
+				compressOnly: false,
+				scalable: true,
+				scaleStep: 0.05,
 				created: function(canvas,width,height){
 					var modal = document.querySelector('.modal'),
 						viewEl = modal.querySelector('.view');
 					viewEl.appendChild(canvas);
 					modal.style.display = 'block';
-					console.log(cropper);
 				}
 			});
 		}
@@ -138,30 +136,20 @@
 
 					result = viewEl = modal= img = null;
 				};
+				img.width = cropper.width;
+				img.height = cropper.height;
 				img.src = imgSrc;
 
 			}
 			if(target.classList.contains('zoom')){
-				var originScaleX = cropper.scaleX,
-					originScaleY = cropper.scaleY;
+				var scale = cropper.scale;
 
-				cropper.scale(originScaleX + 0.1,originScaleY + 0.1);
+				cropper.scaling(scale + 0.1,scale + 0.1);
 			}
 			if(target.classList.contains('shrink')){
-				var originScaleX = cropper.scaleX,
-					originScaleY = cropper.scaleY;
+				var scale = cropper.scale;
 
-				cropper.scale(originScaleX - 0.1,originScaleY - 0.1);
-			}
-			if(target.classList.contains('clockwise')){
-				var rotateZ = cropper.rotateZ;
-
-				cropper.rotate(rotateZ + 1);
-			}
-			if(target.classList.contains('counterclockwise')){
-				var rotateZ = cropper.rotateZ;
-
-				cropper.rotate(rotateZ - 1);
+				cropper.scaling(scale - 0.1,scale - 0.1);
 			}
 			if(target.classList.contains('cancel')){
 				var modal = document.querySelector('.modal'),
