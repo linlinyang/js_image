@@ -900,14 +900,7 @@
 		resultCanvas.style.height = height + 'px';
 		resultCtx.putImageData(tempData,0,0,0,0,width * zoom,height * zoom);
 
-		var canvas = document.createElement('canvas'),
-			ctx = canvas.getContext('2d');
-		canvas.width = width;
-		canvas.height = height;
-		ctx.drawImage(resultCanvas,0,0,width*zoom,height*zoom,0,0,width,height);
-
-		return canvas.toDataURL('image/png',this.quality);
-		//return resultCanvas.toDataURL('image/png',this.quality);
+		return resultCanvas.toDataURL('image/png',this.quality);
 	}
 
 	/*
