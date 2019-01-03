@@ -868,13 +868,13 @@
 			ySpace = (croperHeight - height * zoom) / 2,
 			x = this.x,
 			y = this.y,
-			trmpCanvas = document.createElement('canvas'),
-			tempCtx = trmpCanvas.getContext('2d');
+			tempCanvas = document.createElement('canvas'),
+			tempCtx = tempCanvas.getContext('2d');
 
-		trmpCanvas.width = originWidth * zoom;
-		trmpCanvas.height = originHeight * zoom;
-		trmpCanvas.style.width = originWidth + 'px';
-		trmpCanvas.style.height = originHeight + 'px';
+		tempCanvas.width = originWidth * zoom;
+		tempCanvas.height = originHeight * zoom;
+		tempCanvas.style.width = originWidth + 'px';
+		tempCanvas.style.height = originHeight + 'px';
 
 		tempCtx.clearRect(0,0,originWidth* zoom,originHeight* zoom);
 		x = (xSpace - x);
@@ -900,7 +900,14 @@
 		resultCanvas.style.height = height + 'px';
 		resultCtx.putImageData(tempData,0,0,0,0,width * zoom,height * zoom);
 
-		return resultCanvas.toDataURL('image/png',this.quality);
+		var canvas = document.createElement('canvas'),
+			ctx = canvas.getContext('2d');
+		canvas.width = width;
+		canvas.height = height;
+		ctx.drawImage(resultCanvas,0,0,width,height);
+
+		return canvas.toDataURL('image/png',this.quality);
+		//return resultCanvas.toDataURL('image/png',this.quality);
 	}
 
 	/*
