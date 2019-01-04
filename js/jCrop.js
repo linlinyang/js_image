@@ -1,5 +1,5 @@
 /*!
- * jCrop.js v2.0.0
+ * jCrop.js v3.0.0
  * (c) 2018-12 Zoro Yang
  */
 (function(win,doc){
@@ -181,29 +181,7 @@
 		}
 	}
 
-	/*
-	* 克隆画布及画布里绘制内容
-	* @params{oldCanvas} HTMLElement;被克隆的画布元素
-	* @return HTMLElement;返回新的画布元素
-	*/
-	function cloneCanvas(oldCanvas){
-		var newCanvas = document.createElement('canvas'),
-			context = newCanvas.getContext('2d');
-
-		newCanvas.width = oldCanvas.width;
-		newCanvas.height = oldCanvas.height;
-
-		context.mozImageSmoothingEnabled = false;
-	    context.webkitImageSmoothingEnabled = false;
-	    context.msImageSmoothingEnabled = false;
-	    context.imageSmoothingEnabled = false;
-		context.drawImage(oldCanvas,0,0);
-
-		return newCanvas;
-	}
-
 	var uid = 0;
-
 	/*
 	* 核心类
 	*/
@@ -217,9 +195,9 @@
 			croperHeight: 600,
 			width: 300,
 			height: 300,
-			shadowColor: 'rgba(0,0,0,0.4)',
-			lineColor: '#39f',
-			dashLineColor: 'rgba(254,254,254,0.3)',
+			shadowColor: 'rgba(0,0,0,0.7)',
+			lineColor: '#fff',
+			dashLineColor: 'rgba(255,255,255,0.8)',
 			edgeWidth: 3,
 			quality: 1,
 			offBackgroundColor: 'rgba(0,0,0,0.6)',
@@ -624,7 +602,7 @@
 			return ;
 		}
 
-		this.scale = Math.max(scale,this._minScale || 0);
+		this.scale = Math.max(scale,this._minScale);
 
 		this._redraw();
 	};
@@ -644,7 +622,7 @@
 
 		this.x = ( isNaN(x) ? (croperWidth - width) / 2 : x ) * zoom;
 		this.y = ( isNaN(y) ? (croperHeight - height) / 2 : y ) * zoom;
-		this.scale = isNaN(scale) ? 1 : scale;
+		this.scale = Math.max(isNaN(scale) ? 1 : scale,this._minScale);
 		this._backgroundColor = this.offBackgroundColor;
 
 		this._redraw();
@@ -875,6 +853,7 @@
 		tempCanvas.style.width = originWidth + 'px';
 		tempCanvas.style.height = originHeight + 'px';
 
+		//导入原图，定位裁剪框
 		tempCtx.clearRect(0,0,originWidth * zoom,originHeight * zoom);
 		x = parseInt(xSpace - x);
 		y = parseInt(ySpace - y);
@@ -888,7 +867,8 @@
 			originWidth * zoom,
 			originHeight * zoom
 		);
-		
+
+		//获取裁剪框内容并生成新的画布
 		var resultCanvas = document.createElement('canvas'),
 			resultCtx = resultCanvas.getContext('2d'),
 			tempData = tempCtx.getImageData(x,y,width * zoom,height * zoom);
@@ -900,6 +880,7 @@
 		resultCanvas.style.height = height + 'px';
 		resultCtx.putImageData(tempData,0,0,0,0,width * zoom,height * zoom);
 
+		//导出图片资源
 		return resultCanvas.toDataURL(this.imgType,this.quality);
 	}
 
