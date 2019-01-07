@@ -258,7 +258,7 @@
 
 		this.reset();
 
-		callhook(this,'created',this.canvas,this.width,this.height);
+		callhook(this,'created',this.canvas,this.croperWidth,this.croperHeight,this.width,this.height);
 	};
 
 	/*
@@ -438,6 +438,7 @@
 	* 开始拖拽图片
 	*/
 	Croper.prototype._beginDrag = function(e){
+		callhook(this,'beforeDrag',this.x,this,y);
 		var zoom = this._zoom;
 		this._isDragging = true;
 		this._distanceX = ( e.offsetX ) * zoom - this.x;
@@ -450,6 +451,7 @@
 	* 正在拖拽图片
 	*/
 	Croper.prototype._dragging = function(e){
+		callhook(this,'dragging',this.x,this,y);
 		if(!this._isDragging){
 			return ;
 		}
@@ -477,6 +479,7 @@
 	* 结束拖拽图片
 	*/
 	Croper.prototype._endDrag = function(){
+		callhook(this,'dragged',this.x,this,y);
 		this._isDragging = false;
 		this._backgroundColor = this.offBackgroundColor;
 		this._distanceX = this._distanceY = null;
@@ -596,6 +599,7 @@
 	* @params{scale} Number;缩放倍数
 	*/
 	Croper.prototype.scaling = function(scale){
+		callhook(this,'beforeScale',this.scale);
 		scale = parseFloat(scale);
 
 		if(isNaN(scale)){
@@ -605,12 +609,14 @@
 		this.scale = Math.max(scale,this._minScale);
 
 		this._redraw();
+		callhook(this,'scaled',this.scale);
 	};
 
 	/*
 	* 重置图片位置和放大倍数
 	*/
 	Croper.prototype.reset = function(x,y,scale){
+		callhook(this,'beforeReset',this.x,this.y,this.scale);
 		var width = this._originWidth,
 			height = this._originHeight,
 			croperWidth = this.croperWidth,
@@ -626,6 +632,7 @@
 		this._backgroundColor = this.offBackgroundColor;
 
 		this._redraw();
+		callhook(this,'reseted',this.x,this.y,this.scale);
 	};
 
 	/*
@@ -888,10 +895,12 @@
 	* 裁剪框销毁
 	*/
 	Croper.prototype.destroy = function(){
+		callhook(this,'beforeDestroy');
 		var canvas = this.canvas;
 		canvas.parentNode && canvas.parentNode.removeChild(canvas);
 		this.off();
 		canvas = this.canvas = this.ctx = this._imageSource = this._opts = this._cacheEvents = null;
+		callhook(this,'destroyed');
 	};
 
 	function jCrop(srcOrImg,options){
