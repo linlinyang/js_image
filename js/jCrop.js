@@ -53,7 +53,7 @@
 	* @params{hook} String;钩子函数名称
 	*/
 	function callhook(target,hook){
-		var hookFunc = target._opts[hook],
+		var hookFunc = target[hook],
 			args = Array.prototype.slice.call(arguments,2);
 		if(hookFunc && typeof hookFunc === 'function'){
 			hookFunc.apply(target,args);
