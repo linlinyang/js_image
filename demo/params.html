@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>裁剪参数说明</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no">
+	<style type="text/css">
+		
+		body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,button,textarea,p,blockquote,th,td { margin:0; padding:0; }
+	    body { background:#fff; color:#555; font-size:14px; font-family: Verdana, Arial, Helvetica, sans-serif; }
+	    td,th,caption { font-size:14px; }
+	    h1, h2, h3, h4, h5, h6 { font-weight:normal; font-size:100%; }
+	    address, caption, cite, code, dfn, em, strong, th, var { font-style:normal; font-weight:normal;}
+	    a { color:#555; text-decoration:none; }
+	    a:hover { text-decoration:underline; }
+	    img { border:none; }
+	    ol,ul,li { list-style:none; }
+	    input, textarea, select, button { font:14px Verdana,Helvetica,Arial,sans-serif; }
+	    table { border-collapse:collapse; }
+	    html {overflow-y: scroll;}
+
+	    .clearfix:after {content: "."; display: block; height:0; clear:both; visibility: hidden;}
+	    .clearfix { zoom:1 }
+	</style>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/params.css">
+</head>
+<body>
+	
+	<div class="bg-title">
+		<span>参数简介</span>
+	</div>
+
+	<table class="params" border="0" cellspacing='0' cellpadding='0'>
+		<thead>
+			<tr>
+				<th width="150">参数</th>
+				<th width="150">类型</th>
+				<th width="150">默认值</th>
+				<th width="150">是否必须</th>
+				<th>说明</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="center">croperWidth</td>
+				<td class="center">Number</td>
+				<td class="center">800</td>
+				<td class="center">是</td>
+				<td>整个裁剪画布宽度</td>
+			</tr>
+			<tr>
+				<td class="center">croperHeight</td>
+				<td class="center">Number</td>
+				<td class="center">600</td>
+				<td class="center">是</td>
+				<td>整个裁剪画布宽度</td>
+			</tr>
+			<tr>
+				<td class="center">width</td>
+				<td class="center">Number</td>
+				<td class="center">300</td>
+				<td class="center">是</td>
+				<td>最终裁剪生成图片宽度，即裁剪框宽度</td>
+			</tr>
+			<tr>
+				<td class="center">height</td>
+				<td class="center">Number</td>
+				<td class="center">300</td>
+				<td class="center">是</td>
+				<td>最终裁剪生成图片高度，即裁剪框高度</td>
+			</tr>
+			<tr>
+				<td class="center">shadowColor</td>
+				<td class="center">String(HEX、RGB)</td>
+				<td class="center">rgba(0,0,0,0.7)</td>
+				<td class="center">否</td>
+				<td>画布背景色</td>
+			</tr>
+			<tr>
+				<td class="center">maxSize</td>
+				<td class="center">Number</td>
+				<td class="center">2000</td>
+				<td class="center">否</td>
+				<td>被裁剪图片最大边长</td>
+			</tr>
+			<tr>
+				<td class="center">lineColor</td>
+				<td class="center">String(HEX、RGB)</td>
+				<td class="center">#fff</td>
+				<td class="center">否</td>
+				<td>裁剪框边线颜色</td>
+			</tr>
+			<tr>
+				<td class="center">dashLineColor</td>
+				<td class="center">String(HEX、RGB)</td>
+				<td class="center">rgba(255,255,255,0.8)</td>
+				<td class="center">否</td>
+				<td>裁剪框中间四条虚线颜色</td>
+			</tr>
+			<tr>
+				<td class="center">edgeWidth</td>
+				<td class="center">Number</td>
+				<td class="center">3</td>
+				<td class="center">否</td>
+				<td>裁剪框四边短线宽度</td>
+			</tr>
+			<tr>
+				<td class="center">imgType</td>
+				<td class="center">String</td>
+				<td class="center">image/png</td>
+				<td class="center">否</td>
+				<td>裁剪结果图片类型，可用值：image/jpg、image/jpeg、image/png</td>
+			</tr>
+			<tr>
+				<td class="center">quality</td>
+				<td class="center">Number</td>
+				<td class="center">1</td>
+				<td class="center">否</td>
+				<td>裁剪结果图片质量，imgType为image/jpg或image/jpeg有效</td>
+			</tr>
+			<tr>
+				<td class="center">offBackgroundColor</td>
+				<td class="center">String(HEX、RGB)</td>
+				<td class="center">rgba(0,0,0,0.6)</td>
+				<td class="center">否</td>
+				<td>未开始裁剪时，裁剪框周围阴影颜色</td>
+			</tr>
+			<tr>
+				<td class="center">onBackgroundColor</td>
+				<td class="center">String(HEX、RGB)</td>
+				<td class="center">rgba(0,0,0,0.2)</td>
+				<td class="center">否</td>
+				<td>开始裁剪时，裁剪框周围阴影颜色</td>
+			</tr>
+			<tr>
+				<td class="center">scalable</td>
+				<td class="center">Boolean</td>
+				<td class="center">true</td>
+				<td class="center">否</td>
+				<td>是否可缩放</td>
+			</tr>
+			<tr>
+				<td class="center">scaleStep</td>
+				<td class="center">Number</td>
+				<td class="center">0.02</td>
+				<td class="center">否</td>
+				<td>每次缩放间距</td>
+			</tr>
+			<tr>
+				<td class="center">created</td>
+				<td class="center">Function</td>
+				<td class="center">none</td>
+				<td class="center">否</td>
+				<td>裁剪面板创建完成回调函数</td>
+			</tr>
+			<tr>
+				<td class="center">beforeDrag</td>
+				<td class="center">Function</td>
+				<td class="center">none</td>
+				<td class="center">否</td>
+				<td>开始移动裁剪框回调函数</td>
+			</tr>
+			<tr>
+				<td class="center">dragged</td>
+				<td class="center">Function</td>
+				<td class="center">none</td>
+				<td class="center">否</td>
+				<td>移动裁剪框结束回调函数</td>
+			</tr>
+			<tr>
+				<td class="center">beforeScale</td>
+				<td class="center">Function</td>
+				<td class="center">none</td>
+				<td class="center">否</td>
+				<td>开始缩放回调函数</td>
+			</tr>
+			<tr>
+				<td class="center">scaled</td>
+				<td class="center">Function</td>
+				<td class="center">none</td>
+				<td class="center">否</td>
+				<td>缩放结束回调函数</td>
+			</tr>
+			<tr>
+				<td class="center">beforeReset</td>
+				<td class="center">Function</td>
+				<td class="center">none</td>
+				<td class="center">否</td>
+				<td>开始重置回调函数</td>
+			</tr>
+			<tr>
+				<td class="center">reseted</td>
+				<td class="center">Function</td>
+				<td class="center">none</td>
+				<td class="center">否</td>
+				<td>重置结束回调函数</td>
+			</tr>
+			<tr>
+				<td class="center">beforeDestroy</td>
+				<td class="center">Function</td>
+				<td class="center">none</td>
+				<td class="center">否</td>
+				<td>开始销毁回调函数</td>
+			</tr>
+			<tr>
+				<td class="center">destroyed</td>
+				<td class="center">Function</td>
+				<td class="center">none</td>
+				<td class="center">否</td>
+				<td>完成销毁回调函数</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<div class="bg-title">
+		<span>属性简介（所有设置的参数均只读）</span>
+	</div>
+	<table class="params" border="0" cellspacing='0' cellpadding='0'>
+		<thead>
+			<tr>
+				<th width="150">参数</th>
+				<th width="150">类型</th>
+				<th width="150">读写</th>
+				<th>说明</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="center">canvas</td>
+				<td class="center">HTMLElement</td>
+				<td class="center">只读</td>
+				<td>整个画布元素</td>
+			</tr>
+			<tr>
+				<td class="center">x</td>
+				<td class="center">Number</td>
+				<td class="center">只读</td>
+				<td>被裁减图片x坐标（距离画布左侧距离）</td>
+			</tr>
+			<tr>
+				<td class="center">y</td>
+				<td class="center">Number</td>
+				<td class="center">只读</td>
+				<td>被裁减图片y坐标（距离画布上端距离）</td>
+			</tr>
+			<tr>
+				<td class="center">scale</td>
+				<td class="center">Number</td>
+				<td class="center">只读</td>
+				<td>当前图片缩放值（1为原图尺寸）</td>
+			</tr>
+			<tr>
+				<td class="center">scaling</td>
+				<td class="center">Function</td>
+				<td class="center">只读</td>
+				<td>
+					设置裁剪图片缩放值：scaling(scale)<br>
+					@params scale; Number;缩放值
+				</td>
+			</tr>
+			<tr>
+				<td class="center">reset</td>
+				<td class="center">Function</td>
+				<td class="center">只读</td>
+				<td>
+					重置裁剪图片状态，无参数则恢复默认状态：reset(x,y,scale)<br>
+					@params x; Number;裁剪图片x值<br>
+					@params y; Number;裁剪图片y值<br>
+					@params scale; Number;裁剪图片缩放值值
+				</td>
+			</tr>
+			<tr>
+				<td class="center">cut</td>
+				<td class="center">Function</td>
+				<td class="center">只读</td>
+				<td>
+					裁剪图片，返回裁剪框大小图片：cut()<br>
+					@return String(base64);裁剪图片base64字符串
+				</td>
+			</tr>
+			<tr>
+				<td class="center">destroy</td>
+				<td class="center">Function</td>
+				<td class="center">只读</td>
+				<td>
+					销毁裁剪画布，释放箭头事件：destroy()
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+<script type="text/javascript">
+	$(function(){
+		$('table tbody tr').hover(function(){
+			$(this).css('backgroundColor','#ffffaa');
+		},function(){
+			$(this).css('backgroundColor','#fff');
+		});
+	});
+</script>
+
+</body>
+</html>

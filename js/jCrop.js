@@ -204,7 +204,7 @@
 			onBackgroundColor: 'rgba(0,0,0,0.2)',
 			imgType: 'image/png',
 			scalable: true,
-			scaleStep: this.scaleStep,
+			scaleStep: 0.02,
 			_zoom: 2
 		},this._opts = options);
 

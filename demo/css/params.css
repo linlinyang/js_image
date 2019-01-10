@@ -1,0 +1,26 @@
+.bg-title {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 16px;
+  color: #333; }
+
+table {
+  width: 100%;
+  background: #fff;
+  max-width: 1200px;
+  border-collapse: collapse;
+  border-spacing: 0;
+  empty-cells: show;
+  margin: 10px auto 0; }
+  table th, table td {
+    border: 1px solid #ddd;
+    padding: 10px; }
+  table td.center {
+    text-align: center; }
+  table thead {
+    background: #39A4DC;
+    color: #fff; }
+    table thead th {
+      text-align: center; }
+
+/*# sourceMappingURL=params.css.map */
