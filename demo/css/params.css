@@ -4,10 +4,16 @@
   font-size: 16px;
   color: #333; }
 
-table {
+.imgbox, table {
   width: 100%;
+  max-width: 1200px; }
+
+.imgbox {
+  text-align: center;
+  margin: 15px 0 50px 0; }
+
+table {
   background: #fff;
-  max-width: 1200px;
   border-collapse: collapse;
   border-spacing: 0;
   empty-cells: show;

@@ -21,10 +21,20 @@
 	@include fcw(16px,#333);
 }
 
-table{ 
-	width:100%;  
-	background:#fff;
+%width{
+	width:100%;
 	max-width: 1200px;
+}
+
+.imgbox{
+	@extend %width;
+	text-align: center;
+	margin: 15px 0 50px 0;
+}
+
+table{ 
+	@extend %width; 
+	background:#fff;
 	border-collapse: collapse;
     border-spacing: 0;
     empty-cells: show;

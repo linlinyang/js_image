@@ -217,7 +217,7 @@
 	<div class="bg-title">
 		<span>属性简介（所有设置的参数均只读）</span>
 	</div>
-	<table class="params" border="0" cellspacing='0' cellpadding='0'>
+	<table class="property" border="0" cellspacing='0' cellpadding='0'>
 		<thead>
 			<tr>
 				<th width="150">参数</th>
@@ -232,6 +232,12 @@
 				<td class="center">HTMLElement</td>
 				<td class="center">只读</td>
 				<td>整个画布元素</td>
+			</tr>
+			<tr>
+				<td class="center">ctx</td>
+				<td class="center">CanvasRenderingContext2D</td>
+				<td class="center">只读</td>
+				<td>整个画布绘制上下文</td>
 			</tr>
 			<tr>
 				<td class="center">x</td>
@@ -286,11 +292,15 @@
 				<td class="center">Function</td>
 				<td class="center">只读</td>
 				<td>
-					销毁裁剪画布，释放箭头事件：destroy()
+					销毁裁剪画布，释放监听事件：destroy()
 				</td>
 			</tr>
 		</tbody>
 	</table>
+
+	<div class="imgbox">
+		<img src="images/demo.png" alt="">
+	</div>
 
 <script type="text/javascript">
 	$(function(){
